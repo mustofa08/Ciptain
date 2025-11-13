@@ -1,49 +1,19 @@
-// src/pages/Order.jsx
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { ArrowLeft, CheckCircle, Loader2 } from "lucide-react";
-import { supabase } from "../lib/supabaseClient";
-import { useAuth } from "../contexts/AuthContext";
+import { supabase } from "../../lib/supabaseClient";
+import { useAuth } from "../../contexts/AuthContext";
 
-/* Data template sementara */
-const templates = [
-  {
-    id: 1,
-    name: "Elegant Wedding",
-    category: "Undangan",
-    subcategory: "Wedding",
-    price: "Gratis",
-    image: "/src/assets/template1.jpg",
-  },
-  {
-    id: 2,
-    name: "Birthday Celebration",
-    category: "Undangan",
-    subcategory: "Birthday",
-    price: "Rp 10.000",
-    image: "/src/assets/template2.jpg",
-  },
-  {
-    id: 3,
-    name: "Classic Wedding",
-    category: "Undangan",
-    subcategory: "Wedding",
-    price: "Rp 15.000",
-    image: "/src/assets/template3.jpg",
-  },
-];
-
-// Nomor WhatsApp admin
-const ADMIN_WA = "6282211370354"; // Ganti dengan nomor kamu (gunakan format internasional tanpa "+62")
+const ADMIN_WA = "6281515434168"; // nomor admin WhatsApp
 
 export default function Order() {
   const { id } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const template = templates.find((t) => t.id === parseInt(id));
 
-  const [loading, setLoading] = useState(false);
+  const [template, setTemplate] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [success, setSuccess] = useState(false);
   const [formData, setFormData] = useState({
     name: user?.user_metadata?.name || "",
@@ -53,29 +23,50 @@ export default function Order() {
     payment: "Transfer Bank",
   });
 
+  // Ambil data template dari Supabase
+  useEffect(() => {
+    const fetchTemplate = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("templates")
+          .select("*")
+          .eq("id", id)
+          .single();
+
+        if (error) throw error;
+        setTemplate(data);
+      } catch (err) {
+        console.error("❌ Gagal memuat template:", err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTemplate();
+  }, [id]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // ✅ Kirim order ke Supabase
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (!user) {
       alert("Login dulu sebelum melakukan order 😊");
       navigate("/login");
       return;
     }
 
-    if (!formData.phone.match(/^\d{10,15}$/)) {
+    if (!formData.phone.match(/^[0-9]{10,15}$/)) {
       alert("Nomor WhatsApp tidak valid (hanya angka, 10–15 digit).");
       return;
     }
 
     setLoading(true);
-
-    // Simpan ke database
-    const { error } = await supabase.from("orders").insert([
-      {
+    try {
+      const orderData = {
         user_id: user.id,
         template_id: template.id,
         template_name: template.name,
@@ -86,47 +77,61 @@ export default function Order() {
         note: formData.note,
         payment_method: formData.payment,
         status: "Menunggu Pembayaran",
-      },
-    ]);
+      };
 
-    if (error) {
-      console.error("Gagal menyimpan order:", error);
-      alert("Terjadi kesalahan saat memproses order 😥");
+      console.log("🧾 Mengirim order ke Supabase:", orderData);
+
+      const { error } = await supabase.from("orders").insert([orderData]);
+
+      if (error) throw error;
+
+      // 📲 Kirim pesan ke WA Admin
+      const message = encodeURIComponent(
+        `Halo Admin 👋\n\nSaya ingin melakukan pemesanan di *Ciptain*.\n\n🧾 *Detail Order:*\n• Nama: ${
+          formData.name
+        }\n• Email: ${formData.email}\n• WhatsApp: ${
+          formData.phone
+        }\n• Template: ${template.name}\n• Kategori: ${template.category} (${
+          template.subcategory
+        })\n• Harga: ${template.price}\n• Pembayaran: ${
+          formData.payment
+        }\n\n📝 Catatan:\n${formData.note || "-"}`
+      );
+
+      window.open(`https://wa.me/${ADMIN_WA}?text=${message}`, "_blank");
+
+      setSuccess(true);
+    } catch (err) {
+      console.error("❌ Gagal menyimpan order:", err);
+      alert(`Terjadi kesalahan: ${err.message}`);
+    } finally {
       setLoading(false);
-      return;
     }
-
-    // Siapkan pesan WhatsApp otomatis
-    const message = encodeURIComponent(
-      `Halo Admin 👋\n\nSaya ingin melakukan pemesanan template di *Ciptain*.\n\n🧾 *Detail Order:*\n• Nama: ${
-        formData.name
-      }\n• Email: ${formData.email}\n• No. WhatsApp: ${
-        formData.phone
-      }\n• Template: ${template.name}\n• Kategori: ${template.category} (${
-        template.subcategory
-      })\n• Harga: ${template.price}\n• Metode Pembayaran: ${
-        formData.payment
-      }\n\n📝 Catatan:\n${formData.note || "-"}\n\nTerima kasih! 🙌`
-    );
-
-    // Buka WhatsApp admin dengan pesan otomatis
-    const waURL = `https://wa.me/${ADMIN_WA}?text=${message}`;
-    window.open(waURL, "_blank");
-
-    setSuccess(true);
-    setLoading(false);
   };
 
+  // UI tampilan loading
+  if (loading)
+    return (
+      <div className="flex justify-center items-center min-h-screen text-gray-500">
+        Memuat template...
+      </div>
+    );
+
+  // Template tidak ditemukan
   if (!template)
     return (
       <div className="text-center py-20 text-gray-500 text-lg">
         Template tidak ditemukan 😅 <br />
-        <Link to="/shop" className="text-blue-600 underline mt-2 inline-block">
+        <Link
+          to="/user/shop"
+          className="text-blue-600 underline mt-2 inline-block"
+        >
           Kembali ke Shop
         </Link>
       </div>
     );
 
+  // Jika sukses
   if (success)
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-white to-blue-50 text-center">
@@ -148,24 +153,23 @@ export default function Order() {
       </div>
     );
 
+  // Form order
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-blue-100 py-12 px-6">
       <div className="max-w-4xl mx-auto bg-white rounded-3xl shadow-lg p-8 md:p-12 relative">
-        {/* Tombol kembali */}
         <Link
-          to="/shop"
+          to="/user/shop"
           className="absolute top-6 left-6 text-gray-500 hover:text-blue-600 flex items-center gap-1 transition"
         >
           <ArrowLeft size={18} /> Kembali
         </Link>
 
-        {/* Header */}
         <h1 className="text-3xl font-bold text-center text-gray-800 mb-8">
           🛒 Order Template
         </h1>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-          {/* Kiri - Preview Template */}
+          {/* Preview template */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -185,7 +189,7 @@ export default function Order() {
             <p className="text-blue-600 font-bold text-lg">{template.price}</p>
           </motion.div>
 
-          {/* Kanan - Form Order */}
+          {/* Form order */}
           <motion.form
             onSubmit={handleSubmit}
             initial={{ opacity: 0, y: 30 }}
@@ -193,55 +197,29 @@ export default function Order() {
             transition={{ delay: 0.2 }}
             className="space-y-5"
           >
-            {/* Nama */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Nama Lengkap
-              </label>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                required
-                placeholder="Nama kamu"
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              />
-            </div>
+            <InputField
+              label="Nama Lengkap"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              placeholder="Nama kamu"
+            />
+            <InputField
+              label="Alamat Email"
+              name="email"
+              type="email"
+              value={formData.email}
+              onChange={handleChange}
+              placeholder="contoh@email.com"
+            />
+            <InputField
+              label="Nomor WhatsApp"
+              name="phone"
+              value={formData.phone}
+              onChange={handleChange}
+              placeholder="08xxxxxxxxxx"
+            />
 
-            {/* Email */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Alamat Email
-              </label>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                required
-                placeholder="contoh@email.com"
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              />
-            </div>
-
-            {/* WhatsApp */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Nomor WhatsApp
-              </label>
-              <input
-                type="text"
-                name="phone"
-                value={formData.phone}
-                onChange={handleChange}
-                required
-                placeholder="08xxxxxxxxxx"
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none"
-              />
-            </div>
-
-            {/* Catatan */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Catatan Tambahan
@@ -256,7 +234,6 @@ export default function Order() {
               />
             </div>
 
-            {/* Pembayaran */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Metode Pembayaran
@@ -275,7 +252,6 @@ export default function Order() {
               </select>
             </div>
 
-            {/* Tombol Submit */}
             <motion.button
               type="submit"
               whileHover={{ scale: 1.05 }}
@@ -293,6 +269,33 @@ export default function Order() {
           </motion.form>
         </div>
       </div>
+    </div>
+  );
+}
+
+// Komponen input kecil
+function InputField({
+  label,
+  name,
+  type = "text",
+  value,
+  onChange,
+  placeholder,
+}) {
+  return (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">
+        {label}
+      </label>
+      <input
+        type={type}
+        name={name}
+        value={value}
+        onChange={onChange}
+        required
+        placeholder={placeholder}
+        className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+      />
     </div>
   );
 }

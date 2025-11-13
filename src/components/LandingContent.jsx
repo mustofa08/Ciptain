@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+// ✅ src/components/LandingContent.jsx
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext"; // 👈 tambahkan ini
 import {
   ShoppingBag,
   Palette,
@@ -13,13 +14,14 @@ import {
   CloudUpload,
   Smartphone,
   Zap,
-  Instagram,
   ArrowUp,
   ArrowDown,
 } from "lucide-react";
+import { Instagram } from "lucide-react";
 import { SiTiktok } from "react-icons/si";
 import { FaWhatsapp } from "react-icons/fa";
 import logoIcon from "../assets/logo-icon.svg";
+import { useState, useEffect } from "react";
 
 const floatingImages = [
   {
@@ -52,23 +54,26 @@ const floatingImages = [
   },
 ];
 
-export default function Dashboard() {
+export default function LandingContent({ mode = "public" }) {
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const { profile, user } = useAuth(); // 👈 ambil data user dari context
 
-  // 👇 Tambahkan scroll detection untuk tombol back-to-top
   useEffect(() => {
-    const handleScroll = () => {
-      setShowScrollTop(window.scrollY > 400);
-    };
-    window.addEventListener("scroll", handleScroll, { passive: true });
+    const handleScroll = () => setShowScrollTop(window.scrollY > 400);
+    window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const userName =
+    profile?.username ||
+    profile?.display_name ||
+    user?.email?.split("@")[0] ||
+    "Pengguna"; // fallback
+
   return (
     <div className="flex flex-col items-center bg-gradient-to-b from-blue-50 via-white to-blue-100 min-h-screen overflow-hidden">
-      {/* 🌟 HERO SECTION */}
+      {/* HERO */}
       <section className="flex flex-col md:flex-row justify-between items-center w-full max-w-7xl px-10 py-24 relative">
-        {/* Kiri - Text */}
         <motion.div
           className="md:w-1/2 text-center md:text-left flex flex-col items-center md:items-start z-10"
           initial={{ opacity: 0, y: 40 }}
@@ -80,51 +85,44 @@ export default function Dashboard() {
             alt="Ciptain Logo"
             className="w-20 mb-6 drop-shadow-[0_0_25px_rgba(59,130,246,0.5)] animate-pulse"
           />
-
-          <h1 className="text-4xl md:text-6xl font-extrabold text-gray-800 leading-snug mb-6 tracking-tight">
-            Ciptain — <br className="hidden md:block" />
-            <span className="bg-gradient-to-r from-blue-500 to-cyan-400 text-transparent bg-clip-text">
-              Platform Kreatif Digital
-            </span>
+          <h1 className="text-4xl font-extrabold text-gray-800 mb-4">
+            {mode === "user"
+              ? `👋 Selamat Datang, ${userName}!`
+              : "Ciptain — Platform Kreatif Digital"}
           </h1>
-
-          <p className="text-gray-600 text-lg mb-10 max-w-md text-center md:text-left leading-relaxed">
+          <p className="text-gray-600 text-lg mb-10 max-w-md leading-relaxed">
             Wujudkan undangan pernikahan dan portofolio digital impianmu dengan
             desain elegan, interaktif, dan mudah dibagikan.
           </p>
-
-          {/* 🔹 Tombol CTA + Sosmed */}
           <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
             <Link
-              to="/shop"
+              to={mode === "user" ? "/user/shop" : "/shop"}
               className="bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white px-8 py-3 rounded-full text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2"
             >
               Mulai Ciptakan Karyamu 🚀
             </Link>
-
-            {/* Ikon Sosial Media */}
             <div className="flex items-center gap-5 text-gray-600">
               <a
-                href="https://www.instagram.com/nikilos_s/"
+                href="https://www.instagram.com/ciptain_studio/"
                 target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-pink-500 transition transform hover:scale-110"
+                rel="noreferrer"
+                className="hover:text-pink-500 transition"
               >
                 <Instagram size={26} />
               </a>
               <a
-                href="https://www.tiktok.com/@nino_jkm"
+                href="https://www.tiktok.com/@ciptain_studio"
                 target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-black transition transform hover:scale-110"
+                rel="noreferrer"
+                className="hover:text-black transition"
               >
                 <SiTiktok size={24} />
               </a>
               <a
-                href="https://wa.me/6282211370354"
+                href="https://wa.me/6281515434168"
                 target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-green-500 transition transform hover:scale-110"
+                rel="noreferrer"
+                className="hover:text-green-500 transition"
               >
                 <FaWhatsapp size={26} />
               </a>
@@ -132,29 +130,24 @@ export default function Dashboard() {
           </div>
         </motion.div>
 
-        {/* Kanan - Gambar bergerak */}
+        {/* Floating images */}
         <div className="md:w-1/2 mt-14 md:mt-0 relative flex justify-center items-center">
-          {/* 🌈 Efek Aura Cahaya */}
           <motion.div
             className="absolute inset-0 blur-[150px] opacity-60 bg-gradient-to-br from-blue-400/50 via-cyan-300/40 to-transparent rounded-full"
-            initial={{ opacity: 0.4, scale: 0.8 }}
             animate={{ opacity: [0.3, 0.7, 0.4], scale: [0.9, 1.05, 0.9] }}
-            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+            transition={{ duration: 6, repeat: Infinity }}
           />
-
           <div className="relative w-full max-w-md h-[420px]">
             {floatingImages.map((img, i) => (
               <motion.img
                 key={i}
                 src={img.src}
-                alt={`Mockup ${i + 1}`}
+                alt=""
                 className={`absolute rounded-2xl shadow-2xl ${img.size}`}
-                initial={{ opacity: 0, scale: 0.95 }}
                 animate={{
                   y: [0, -20, 0, 15, 0],
                   x: [0, 10, 0, -10, 0],
                   rotate: [0, 1.5, -1.5, 0],
-                  opacity: [0.5, 1, 1, 0.8],
                 }}
                 transition={{
                   duration: img.duration + 2,
@@ -162,10 +155,7 @@ export default function Dashboard() {
                   ease: "easeInOut",
                   delay: img.delay,
                 }}
-                style={{
-                  ...img.style,
-                  filter: "brightness(1.05) contrast(1.1) saturate(1.2)",
-                }}
+                style={img.style}
               />
             ))}
           </div>
@@ -367,18 +357,8 @@ export default function Dashboard() {
         </div>
       </section>
 
-      {/* 🩵 FOOTER */}
-      <footer className="w-full text-gray-500 text-sm text-center py-10 bg-white/50 border-t mt-10">
-        © {new Date().getFullYear()} <b>Ciptain</b> — Menciptakan Kesan Digital
-        yang Abadi 💙
-      </footer>
-
-      {/* Tombol Back to Top */}
       {showScrollTop && (
         <motion.button
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          whileHover={{ scale: 1.05 }}
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           className="fixed bottom-20 right-8 bg-blue-600 text-white p-3 rounded-full shadow-lg hover:bg-blue-700 transition z-50"
         >

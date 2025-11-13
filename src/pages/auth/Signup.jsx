@@ -1,6 +1,7 @@
+// src/pages/Signup.jsx
 import { useState } from "react";
-import { supabase } from "../lib/supabaseClient";
-import { useNavigate, Link } from "react-router-dom";
+import { supabase } from "../../lib/supabaseClient";
+import { Link } from "react-router-dom";
 
 export default function Signup() {
   const [email, setEmail] = useState("");
@@ -10,86 +11,80 @@ export default function Signup() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   async function handleSignup(e) {
     e.preventDefault();
     setError(null);
     setSuccess(null);
+    setLoading(true);
 
-    // ✅ Simpan sementara ke localStorage agar bisa auto-fill di halaman login
-    localStorage.setItem("signup_email", email);
-    localStorage.setItem("signup_password", password);
+    console.log("📩 Signup attempt:", email);
 
-    // ✅ Cek apakah email sudah digunakan
-    const { data: existingUser } = await supabase
-      .from("profiles")
-      .select("email")
-      .eq("email", email)
-      .maybeSingle();
-
-    if (existingUser) {
-      setError("Email sudah digunakan. Silakan login atau gunakan email lain.");
-      return;
-    }
-
-    // ✅ Buat akun baru + kirim email verifikasi
-    const { data, error: signUpError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { username, phone },
-        emailRedirectTo: `${window.location.origin}/login`, // setelah verifikasi -> ke login
-      },
-    });
-
-    if (signUpError) {
-      if (signUpError.message.includes("User already registered")) {
-        setError(
-          "Email sudah terdaftar. Silakan login atau gunakan email lain."
-        );
-      } else {
-        setError(signUpError.message);
+    try {
+      // Validasi sederhana
+      if (!email || !password || password.length < 6) {
+        setError("Email dan password wajib diisi (min. 6 karakter).");
+        setLoading(false);
+        return;
       }
-      return;
-    }
 
-    // ✅ Simpan profil (opsional)
-    if (data.user) {
-      await supabase.from("profiles").insert({
-        id: data.user.id,
-        username,
-        phone,
+      // 🔹 Proses signup (email verifikasi)
+      const { data, error: signUpError } = await supabase.auth.signUp({
         email,
+        password,
+        options: {
+          data: { username, phone }, // metadata disimpan di auth.users
+          emailRedirectTo: `${window.location.origin}/login`,
+        },
       });
-    }
 
-    // ✅ Tampilkan pesan sukses
-    setSuccess(
-      "Pendaftaran berhasil! Silakan cek email kamu untuk verifikasi sebelum login."
-    );
+      if (signUpError) {
+        console.error("❌ Signup error:", signUpError);
+        setError(signUpError.message || "Pendaftaran gagal.");
+        setLoading(false);
+        return;
+      }
+
+      console.log("✅ Signup success:", data);
+
+      // ✅ Notifikasi ke user
+      setSuccess(
+        "Pendaftaran berhasil 🎉 Silakan cek email kamu untuk verifikasi akun sebelum login."
+      );
+    } catch (err) {
+      console.error("🔥 Unexpected signup error:", err);
+      setError("Terjadi kesalahan tak terduga. Silakan coba lagi nanti.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-50">
       <form
         onSubmit={handleSignup}
-        className="bg-white p-8 rounded-xl shadow-lg w-96"
+        className="bg-white p-8 rounded-xl shadow-lg w-96 transition-all"
       >
         <h2 className="text-2xl font-semibold mb-6 text-center text-gray-800">
           Daftar ke <span className="text-blue-600">Ciptain</span>
         </h2>
 
+        {/* ✅ Notifikasi sukses */}
         {success && (
-          <div className="bg-green-100 text-green-700 p-3 rounded mb-4 text-sm text-center">
+          <div className="bg-green-100 border border-green-400 text-green-700 p-3 rounded mb-4 text-sm text-center">
             {success}
           </div>
         )}
+
+        {/* ❌ Notifikasi error */}
         {error && (
-          <div className="bg-red-100 text-red-700 p-3 rounded mb-4 text-sm text-center">
+          <div className="bg-red-100 border border-red-400 text-red-700 p-3 rounded mb-4 text-sm text-center">
             {error}
           </div>
         )}
 
+        {/* 🧾 Input fields */}
         <input
           type="text"
           placeholder="Username"
@@ -98,6 +93,7 @@ export default function Signup() {
           className="border w-full p-3 rounded mb-3 focus:outline-none focus:ring-2 focus:ring-green-500"
           required
         />
+
         <input
           type="tel"
           placeholder="Nomor HP"
@@ -106,6 +102,7 @@ export default function Signup() {
           className="border w-full p-3 rounded mb-3 focus:outline-none focus:ring-2 focus:ring-green-500"
           required
         />
+
         <input
           type="email"
           placeholder="Email"
@@ -114,6 +111,7 @@ export default function Signup() {
           className="border w-full p-3 rounded mb-3 focus:outline-none focus:ring-2 focus:ring-green-500"
           required
         />
+
         <div className="relative mb-5">
           <input
             type={showPassword ? "text" : "password"}
@@ -132,11 +130,17 @@ export default function Signup() {
           </button>
         </div>
 
+        {/* 🔘 Tombol daftar */}
         <button
           type="submit"
-          className="w-full bg-green-600 text-white py-2.5 rounded hover:bg-green-700 transition"
+          disabled={loading}
+          className={`w-full py-2.5 rounded text-white font-medium transition ${
+            loading
+              ? "bg-green-400 cursor-not-allowed"
+              : "bg-green-600 hover:bg-green-700"
+          }`}
         >
-          Sign Up
+          {loading ? "Mendaftar..." : "Sign Up"}
         </button>
 
         <div className="text-center mt-5 text-sm">

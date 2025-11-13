@@ -1,8 +1,7 @@
-// src/pages/TemplateDetail.jsx
 import { useParams, Link } from "react-router-dom";
-import { templates } from "../data/templates";
-import WeddingLayout from "../layouts/WeddingLayout";
-import PortfolioLayout from "../layouts/PortfolioLayout";
+import { templates } from "../../data/templates";
+import WeddingLayout from "../../layouts/WeddingLayout";
+import PortfolioLayout from "../../layouts/PortfolioLayout";
 
 export default function TemplateDetail() {
   const { id } = useParams();
@@ -21,7 +20,6 @@ export default function TemplateDetail() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <div className="text-center py-10">
         <h1 className="text-3xl font-bold text-gray-800">{template.name}</h1>
         <p className="text-gray-500">
@@ -29,16 +27,13 @@ export default function TemplateDetail() {
         </p>
       </div>
 
-      {/* Layout dinamis */}
       {template.layout === "wedding" && (
         <WeddingLayout data={template.content} />
       )}
       {template.layout === "portfolio" && (
         <PortfolioLayout data={template.content} />
       )}
-      {template.layout === "shop" && <ShopLayout data={template.content} />}
 
-      {/* Tombol kembali */}
       <div className="text-center my-10">
         <Link
           to="/shop"
