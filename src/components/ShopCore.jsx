@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Eye,
@@ -29,14 +29,35 @@ export default function ShopCore({ mode = "public" }) {
   const [selectedSubcategory, setSelectedSubcategory] = useState("Semua");
   const [showScrollTop, setShowScrollTop] = useState(false);
 
-  const [viewMode, setViewMode] = useState("all"); // 🟢 "all" | "favorites"
+  const [viewMode, setViewMode] = useState("all"); // "all" | "favorites"
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [favPulse, setFavPulse] = useState(false);
+  const prevFavCountRef = useRef(0);
 
   const getImageUrl = (path) => {
     if (!path) return "/src/assets/template-placeholder.jpg";
     if (path.startsWith("http")) return path;
     const { data } = supabase.storage.from("templates").getPublicUrl(path);
     return data?.publicUrl || "/src/assets/template-placeholder.jpg";
+  };
+
+  // helper: ubah angka kecil ke kata (satu, dua, ...)
+  const numberToWord = (n) => {
+    const map = [
+      "nol",
+      "satu",
+      "dua",
+      "tiga",
+      "empat",
+      "lima",
+      "enam",
+      "tujuh",
+      "delapan",
+      "sembilan",
+      "sepuluh",
+    ];
+    if (n >= 0 && n <= 10) return map[n];
+    return n.toString();
   };
 
   // 🔹 Fetch templates
@@ -99,9 +120,20 @@ export default function ShopCore({ mode = "public" }) {
         .select("*")
         .eq("user_id", user.id);
       if (data) setFavorites(data);
+      prevFavCountRef.current = data?.length || 0;
     };
     fetchFavorites();
   }, [mode, user]);
+
+  // when favorites count changes -> pulse animation on floating button
+  useEffect(() => {
+    const prev = prevFavCountRef.current || 0;
+    if (favorites.length > prev) {
+      setFavPulse(true);
+      setTimeout(() => setFavPulse(false), 700);
+    }
+    prevFavCountRef.current = favorites.length;
+  }, [favorites.length]);
 
   // 🔹 Scroll-to-top button
   useEffect(() => {
@@ -134,6 +166,7 @@ export default function ShopCore({ mode = "public" }) {
         image: template.image,
       };
       await supabase.from("favorites").insert([newFav]);
+      // insert returns nothing consistent; just optimis update
       setFavorites((prev) => [...prev, newFav]);
     }
   };
@@ -157,6 +190,26 @@ export default function ShopCore({ mode = "public" }) {
   // 🔹 Template list based on tab
   const displayedTemplates =
     viewMode === "favorites" ? favoriteTemplates : filteredTemplates;
+
+  // dynamic header text for favorites drawer
+  const favoritesCount = favorites.length;
+  const favoritesHeaderText = (() => {
+    if (favoritesCount === 0) return "Belum ada template favorit";
+    if (favoritesCount === 1) return `1 template favorit — ${numberToWord(1)}`;
+    // for readability, show number + word for small counts
+    if (favoritesCount <= 10)
+      return `${favoritesCount} template favorit — ${numberToWord(
+        favoritesCount
+      )}`;
+    return `${favoritesCount} template favorit`;
+  })();
+
+  const favoritesSubText = (() => {
+    if (favoritesCount === 0)
+      return "Tambahkan template ke favorit untuk melihatnya di sini.";
+    if (favoritesCount === 1) return "Kamu sedang menyukai 1 template.";
+    return `Kamu menyukai ${favoritesCount} template.`;
+  })();
 
   return (
     <div className="relative min-h-screen bg-gradient-to-b from-blue-50 via-white to-blue-100 py-8 px-4 md:px-8">
@@ -303,9 +356,23 @@ export default function ShopCore({ mode = "public" }) {
         <>
           <button
             onClick={() => setDrawerOpen(true)}
-            className="fixed bottom-8 right-8 bg-gradient-to-r from-blue-600 to-cyan-400 text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all z-50"
+            className={`fixed bottom-8 right-8 bg-gradient-to-r from-blue-600 to-cyan-400 text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all z-50 flex items-center justify-center ${
+              favPulse ? "animate-pulse" : ""
+            }`}
+            aria-label="Favorit Saya"
           >
-            <Heart size={22} />
+            <div className="relative">
+              <Heart size={22} />
+              {/* badge count */}
+              {favoritesCount > 0 && (
+                <span
+                  className="absolute -top-2 -right-2 bg-white text-blue-700 text-xs font-semibold rounded-full px-2 py-0.5 shadow"
+                  style={{ minWidth: 20, textAlign: "center" }}
+                >
+                  {favoritesCount}
+                </span>
+              )}
+            </div>
           </button>
 
           <AnimatePresence>
@@ -318,10 +385,15 @@ export default function ShopCore({ mode = "public" }) {
                 className="fixed top-0 right-0 w-80 h-full bg-white shadow-2xl border-l border-gray-100 z-[9999] p-5 overflow-y-auto"
               >
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-semibold text-blue-600 flex items-center gap-2">
-                    <Star className="text-yellow-400" size={18} />
-                    Favorit Saya
-                  </h3>
+                  <div>
+                    <h3 className="text-lg font-semibold text-blue-600 flex items-center gap-2">
+                      <Star className="text-yellow-400" size={18} />
+                      {favoritesHeaderText}
+                    </h3>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {favoritesSubText}
+                    </p>
+                  </div>
                   <button
                     onClick={() => setDrawerOpen(false)}
                     className="text-gray-400 hover:text-gray-600"
@@ -329,6 +401,7 @@ export default function ShopCore({ mode = "public" }) {
                     <X size={20} />
                   </button>
                 </div>
+
                 {favoriteTemplates.length > 0 ? (
                   favoriteTemplates.map((t) => (
                     <div
@@ -346,6 +419,15 @@ export default function ShopCore({ mode = "public" }) {
                         </p>
                         <p className="text-xs text-gray-500">{t.price}</p>
                       </div>
+                      <button
+                        onClick={() => {
+                          // remove from favorites quickly in UI
+                          toggleFavorite(t);
+                        }}
+                        className="text-sm text-red-500 hover:underline"
+                      >
+                        Hapus
+                      </button>
                     </div>
                   ))
                 ) : (
