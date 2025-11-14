@@ -7,13 +7,19 @@ import {
   Settings,
   Users,
   ClipboardList,
+  Eye,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
+import { usePreview } from "../contexts/PreviewContext";
 import { supabase } from "../lib/supabaseClient";
 import { motion } from "framer-motion";
+import { useState } from "react";
 
 export default function AdminLayout() {
   const { profile } = useAuth();
+  const { previewMode, setPreviewMode } = usePreview();
+  const [showMenu, setShowMenu] = useState(false);
+
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -34,7 +40,6 @@ export default function AdminLayout() {
     <div className="flex min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
       {/* Sidebar */}
       <aside className="w-64 md:w-72 bg-white border-r shadow-md flex flex-col justify-between transition-all">
-        {/* Header */}
         <div>
           <div className="p-6 border-b border-gray-200">
             <Link to="/admin" className="block">
@@ -45,6 +50,58 @@ export default function AdminLayout() {
             <p className="text-sm text-gray-500 mt-1">
               👋 {profile?.username || "Administrator"}
             </p>
+          </div>
+
+          {/* 🔵 PREVIEW BUTTON */}
+          <div className="px-4 py-3 border-b">
+            <button
+              onClick={() => setShowMenu(!showMenu)}
+              className="w-full flex items-center justify-between bg-blue-100 text-blue-700 px-3 py-2 rounded-lg hover:bg-blue-200 text-sm font-medium"
+            >
+              <span className="flex items-center gap-2">
+                <Eye size={16} /> Preview Mode
+              </span>
+              <span className="text-xs opacity-70">{previewMode}</span>
+            </button>
+
+            {showMenu && (
+              <div className="mt-2 bg-white shadow-md rounded-lg text-sm overflow-hidden">
+                <button
+                  onClick={() => setPreviewMode("public")}
+                  className="w-full px-4 py-2 hover:bg-gray-100 text-left"
+                >
+                  👥 Lihat sebagai Pengunjung
+                </button>
+
+                <button
+                  onClick={() => setPreviewMode("user")}
+                  className="w-full px-4 py-2 hover:bg-gray-100 text-left"
+                >
+                  👤 Lihat sebagai User
+                </button>
+
+                <button
+                  onClick={() => setPreviewMode("mobile")}
+                  className="w-full px-4 py-2 hover:bg-gray-100 text-left"
+                >
+                  📱 Preview Mobile
+                </button>
+
+                <button
+                  onClick={() => setPreviewMode("desktop")}
+                  className="w-full px-4 py-2 hover:bg-gray-100 text-left"
+                >
+                  🖥️ Preview Desktop
+                </button>
+
+                <button
+                  onClick={() => setPreviewMode("none")}
+                  className="w-full px-4 py-2 hover:bg-gray-100 text-left text-red-600"
+                >
+                  ❌ Matikan Preview
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Navigation */}

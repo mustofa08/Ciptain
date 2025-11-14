@@ -1,3 +1,4 @@
+// src/components/ShopCore.jsx
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -12,9 +13,34 @@ import {
 import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import { useAuth } from "../contexts/AuthContext";
+import { usePreview } from "../contexts/PreviewContext";
+
+/**
+ * ShopCore
+ * props:
+ *  - mode: "public" | "user"  (default "public")
+ *
+ * Behavior:
+ *  - If PreviewContext.previewMode !== "none", override effectiveMode:
+ *      previewMode "public"  -> effectiveMode = "public"
+ *      previewMode "user"    -> effectiveMode = "user"
+ *      previewMode "mobile"  -> effectiveMode = mode but compact layout
+ *      previewMode "desktop" -> effectiveMode = mode (desktop layout)
+ */
 
 export default function ShopCore({ mode = "public" }) {
   const { user } = useAuth();
+  const { previewMode } = usePreview();
+
+  // determine effective mode & compact flag
+  const compactPreview = previewMode === "mobile";
+  const effectiveMode =
+    previewMode === "public"
+      ? "public"
+      : previewMode === "user"
+      ? "user"
+      : // if previewMode is mobile/desktop/none -> use incoming prop
+        mode;
 
   const [templates, setTemplates] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -34,14 +60,20 @@ export default function ShopCore({ mode = "public" }) {
   const [favPulse, setFavPulse] = useState(false);
   const prevFavCountRef = useRef(0);
 
+  // helper: safe public url getter
   const getImageUrl = (path) => {
     if (!path) return "/src/assets/template-placeholder.jpg";
     if (path.startsWith("http")) return path;
-    const { data } = supabase.storage.from("templates").getPublicUrl(path);
-    return data?.publicUrl || "/src/assets/template-placeholder.jpg";
+    // supabase.storage.from(...).getPublicUrl returns { data: { publicUrl } }
+    try {
+      const { data } = supabase.storage.from("templates").getPublicUrl(path);
+      return data?.publicUrl || "/src/assets/template-placeholder.jpg";
+    } catch (err) {
+      return "/src/assets/template-placeholder.jpg";
+    }
   };
 
-  // helper: ubah angka kecil ke kata (satu, dua, ...)
+  // helper: angka ke kata (satu, dua, ...)
   const numberToWord = (n) => {
     const map = [
       "nol",
@@ -62,6 +94,7 @@ export default function ShopCore({ mode = "public" }) {
 
   // 🔹 Fetch templates
   useEffect(() => {
+    let mounted = true;
     const fetchTemplates = async () => {
       setLoading(true);
       try {
@@ -70,18 +103,23 @@ export default function ShopCore({ mode = "public" }) {
           .select("*")
           .order("created_at", { ascending: false });
         if (error) throw error;
-        const withUrls = data.map((t) => ({
+        // map images to public urls
+        const withUrls = (data || []).map((t) => ({
           ...t,
           image: getImageUrl(t.image),
         }));
-        setTemplates(withUrls);
-      } catch {
-        setErrorMsg("Gagal memuat data template 😢");
+        if (mounted) setTemplates(withUrls);
+      } catch (err) {
+        console.error("Gagal memuat templates:", err?.message || err);
+        if (mounted) setErrorMsg("Gagal memuat data template 😢");
       } finally {
-        setLoading(false);
+        if (mounted) setLoading(false);
       }
     };
     fetchTemplates();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   // 🔹 Fetch categories + subcategories
@@ -97,35 +135,50 @@ export default function ShopCore({ mode = "public" }) {
         setCategories(catData || []);
         setSubcategories(subData || []);
         const map = { Semua: [] };
-        catData?.forEach((cat) => {
-          const relatedSubs = subData
+        (catData || []).forEach((cat) => {
+          const relatedSubs = (subData || [])
             .filter((s) => s.category_id === cat.id)
             .map((s) => s.name);
           map[cat.name] = ["Semua", ...relatedSubs];
         });
         setCategoryMap(map);
-      } catch {
+      } catch (err) {
+        console.warn("fetchCategories error", err);
         setCategoryMap({ Semua: [] });
       }
     };
     fetchCategories();
   }, []);
 
-  // 🔹 Fetch favorites
+  // 🔹 Fetch favorites (only relevant for user mode)
   useEffect(() => {
-    if (mode !== "user" || !user) return;
+    if (effectiveMode !== "user") return;
+    if (!user) {
+      setFavorites([]);
+      prevFavCountRef.current = 0;
+      return;
+    }
+    let mounted = true;
     const fetchFavorites = async () => {
-      const { data } = await supabase
-        .from("favorites")
-        .select("*")
-        .eq("user_id", user.id);
-      if (data) setFavorites(data);
-      prevFavCountRef.current = data?.length || 0;
+      try {
+        const { data } = await supabase
+          .from("favorites")
+          .select("*")
+          .eq("user_id", user.id);
+        if (!mounted) return;
+        setFavorites(data || []);
+        prevFavCountRef.current = (data || []).length;
+      } catch (err) {
+        console.warn("fetchFavorites error", err);
+      }
     };
     fetchFavorites();
-  }, [mode, user]);
+    return () => {
+      mounted = false;
+    };
+  }, [effectiveMode, user]);
 
-  // when favorites count changes -> pulse animation on floating button
+  // when favorites count increases -> pulse animation on floating button
   useEffect(() => {
     const prev = prevFavCountRef.current || 0;
     if (favorites.length > prev) {
@@ -142,19 +195,31 @@ export default function ShopCore({ mode = "public" }) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // toggle favorite (optimistic UI)
   const toggleFavorite = async (template) => {
-    if (mode !== "user") {
+    if (effectiveMode !== "user") {
       alert("Login terlebih dahulu untuk menyimpan favorit 💙");
+      return;
+    }
+    if (!user) {
+      alert("Silakan login dulu.");
       return;
     }
     const exists = favorites.some((f) => f.template_id === template.id);
     if (exists) {
-      await supabase
-        .from("favorites")
-        .delete()
-        .eq("user_id", user.id)
-        .eq("template_id", template.id);
-      setFavorites((prev) => prev.filter((f) => f.template_id !== template.id));
+      // remove
+      try {
+        await supabase
+          .from("favorites")
+          .delete()
+          .eq("user_id", user.id)
+          .eq("template_id", template.id);
+        setFavorites((prev) =>
+          prev.filter((f) => f.template_id !== template.id)
+        );
+      } catch (err) {
+        console.warn("gagal hapus favorit", err);
+      }
     } else {
       const newFav = {
         user_id: user.id,
@@ -165,9 +230,13 @@ export default function ShopCore({ mode = "public" }) {
         price: template.price,
         image: template.image,
       };
-      await supabase.from("favorites").insert([newFav]);
-      // insert returns nothing consistent; just optimis update
-      setFavorites((prev) => [...prev, newFav]);
+      try {
+        await supabase.from("favorites").insert([newFav]);
+        // optimistic update
+        setFavorites((prev) => [...prev, newFav]);
+      } catch (err) {
+        console.warn("gagal tambah favorit", err);
+      }
     }
   };
 
@@ -187,7 +256,7 @@ export default function ShopCore({ mode = "public" }) {
     favorites.some((f) => f.template_id === t.id)
   );
 
-  // 🔹 Template list based on tab
+  // displayed templates based on tab
   const displayedTemplates =
     viewMode === "favorites" ? favoriteTemplates : filteredTemplates;
 
@@ -196,7 +265,6 @@ export default function ShopCore({ mode = "public" }) {
   const favoritesHeaderText = (() => {
     if (favoritesCount === 0) return "Belum ada template favorit";
     if (favoritesCount === 1) return `1 template favorit — ${numberToWord(1)}`;
-    // for readability, show number + word for small counts
     if (favoritesCount <= 10)
       return `${favoritesCount} template favorit — ${numberToWord(
         favoritesCount
@@ -211,8 +279,18 @@ export default function ShopCore({ mode = "public" }) {
     return `Kamu menyukai ${favoritesCount} template.`;
   })();
 
+  // compact layout class (for mobile preview)
+  const compactCardClass = compactPreview
+    ? "w-[180px]"
+    : "w-[230px] md:w-[250px]";
+  const compactGrid = compactPreview
+    ? "sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
+    : "sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4";
+
   return (
-    <div className="relative min-h-screen bg-gradient-to-b from-blue-50 via-white to-blue-100 py-8 px-4 md:px-8">
+    <div
+      className={`relative min-h-screen bg-gradient-to-b from-blue-50 via-white to-blue-100 py-8 px-4 md:px-8`}
+    >
       {/* Glow */}
       <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-blue-300/20 blur-[150px] rounded-full pointer-events-none" />
 
@@ -229,10 +307,15 @@ export default function ShopCore({ mode = "public" }) {
           </span>
         </h1>
         <p className="text-gray-600 mt-4 text-lg max-w-2xl mx-auto">
-          {mode === "user"
+          {effectiveMode === "user"
             ? "Temukan template terbaik dan simpan favoritmu 💙"
             : "Lihat dan pesan template profesional dengan desain elegan 💫"}
         </p>
+        {previewMode !== "none" && (
+          <p className="text-xs text-gray-500 mt-2">
+            (Preview mode: <b>{previewMode}</b>)
+          </p>
+        )}
       </motion.div>
 
       {/* Filter + Tabs */}
@@ -295,7 +378,7 @@ export default function ShopCore({ mode = "public" }) {
           )}
 
         {/* Tabs */}
-        {mode === "user" && (
+        {effectiveMode === "user" && (
           <div className="flex justify-center mt-6 gap-4">
             <button
               onClick={() => setViewMode("all")}
@@ -330,16 +413,17 @@ export default function ShopCore({ mode = "public" }) {
         ) : errorMsg ? (
           <div className="text-center text-red-500 py-20">{errorMsg}</div>
         ) : displayedTemplates.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-10">
+          <div className={`grid grid-cols-1 ${compactGrid} gap-10`}>
             {displayedTemplates.map((t) => {
               const isFav = favorites.some((f) => f.template_id === t.id);
               return (
                 <TemplateCard
                   key={t.id}
                   template={t}
-                  mode={mode}
+                  mode={effectiveMode}
                   isFav={isFav}
                   onFavorite={toggleFavorite}
+                  compact={compactPreview}
                 />
               );
             })}
@@ -351,8 +435,8 @@ export default function ShopCore({ mode = "public" }) {
         )}
       </div>
 
-      {/* Floating Favorites Drawer */}
-      {mode === "user" && (
+      {/* Floating Favorites Drawer (only for user mode) */}
+      {effectiveMode === "user" && (
         <>
           <button
             onClick={() => setDrawerOpen(true)}
@@ -360,10 +444,10 @@ export default function ShopCore({ mode = "public" }) {
               favPulse ? "animate-pulse" : ""
             }`}
             aria-label="Favorit Saya"
+            title={`${favoritesCount} favorit`}
           >
             <div className="relative">
               <Heart size={22} />
-              {/* badge count */}
               {favoritesCount > 0 && (
                 <span
                   className="absolute -top-2 -right-2 bg-white text-blue-700 text-xs font-semibold rounded-full px-2 py-0.5 shadow"
@@ -421,7 +505,6 @@ export default function ShopCore({ mode = "public" }) {
                       </div>
                       <button
                         onClick={() => {
-                          // remove from favorites quickly in UI
                           toggleFavorite(t);
                         }}
                         className="text-sm text-red-500 hover:underline"
@@ -459,25 +542,31 @@ export default function ShopCore({ mode = "public" }) {
   );
 }
 
-/* 🔹 Template Card */
-function TemplateCard({ template, mode, isFav, onFavorite }) {
+/* 🔹 Template Card (supports compact) */
+function TemplateCard({ template, mode, isFav, onFavorite, compact = false }) {
+  const containerClass = compact ? "w-[180px]" : "w-[230px] md:w-[250px]";
+  const aspect = "aspect-[9/18]";
+
   return (
     <motion.div
       whileHover={{ scale: 1.03 }}
       className="relative flex flex-col items-center group transition-all duration-300"
     >
-      <div className="relative bg-white rounded-[2rem] shadow-lg overflow-hidden border border-gray-100 hover:shadow-2xl hover:shadow-blue-100 transition-all aspect-[9/18] w-[230px] md:w-[250px]">
+      <div
+        className={`relative bg-white rounded-[2rem] shadow-lg overflow-hidden border border-gray-100 hover:shadow-2xl transition-all ${aspect} ${containerClass}`}
+      >
         <img
           src={template.image}
           alt={template.name}
           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
         />
         <motion.div
-          whileTap={{ scale: 1.2 }}
+          whileTap={{ scale: 1.1 }}
           onClick={() => onFavorite(template)}
           className={`absolute z-10 top-3 right-3 p-2 rounded-full shadow-md cursor-pointer backdrop-blur-sm transition-all ${
             isFav ? "bg-red-100/90" : "bg-white/70 hover:bg-white/90"
           }`}
+          title={isFav ? "Hapus favorit" : "Tambah favorit"}
         >
           <Heart
             size={18}
@@ -488,6 +577,7 @@ function TemplateCard({ template, mode, isFav, onFavorite }) {
             }`}
           />
         </motion.div>
+
         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex flex-col justify-center items-center text-white space-y-3">
           <Link
             to={`/template/${template.id}`}
@@ -500,7 +590,8 @@ function TemplateCard({ template, mode, isFav, onFavorite }) {
               if (mode === "user") {
                 window.location.href = `/user/order/${template.id}`;
               } else {
-                alert("Silakan login terlebih dahulu untuk melakukan order 💬");
+                // for public preview open order route but show login later
+                window.location.href = `/user/order/${template.id}`;
               }
             }}
             className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-full text-sm transition"
@@ -509,6 +600,7 @@ function TemplateCard({ template, mode, isFav, onFavorite }) {
           </button>
         </div>
       </div>
+
       <div className="text-center mt-4">
         <h3 className="text-base font-semibold text-gray-800">
           {template.name}
