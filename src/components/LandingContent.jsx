@@ -23,30 +23,35 @@ import { FaWhatsapp } from "react-icons/fa";
 import logoIcon from "../assets/logo-icon.svg";
 import { useState, useEffect } from "react";
 
+import sample1 from "../assets/sample1.jpg";
+import sample2 from "../assets/sample2.jpg";
+import sample3 from "../assets/sample3.jpg";
+import sample4 from "../assets/sample4.jpg";
+
 const floatingImages = [
   {
-    src: "/src/assets/sample1.jpg",
+    src: sample1,
     style: { top: "0%", left: "10%" },
     delay: 1,
     size: "w-32 md:w-40",
     duration: 6,
   },
   {
-    src: "/src/assets/sample2.jpg",
+    src: sample2,
     style: { top: "0%", right: "10%" },
     delay: 2,
     size: "w-32 md:w-40",
     duration: 7,
   },
   {
-    src: "/src/assets/sample3.jpg",
+    src: sample3,
     style: { bottom: "0%", left: "0%" },
     delay: 3,
     size: "w-28 md:w-36",
     duration: 5,
   },
   {
-    src: "/src/assets/sample4.jpg",
+    src: sample4,
     style: { bottom: "0%", right: "0%" },
     delay: 4,
     size: "w-28 md:w-36",
