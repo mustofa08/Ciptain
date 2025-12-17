@@ -1,3 +1,4 @@
+import React from "react";
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import { motion } from "framer-motion";

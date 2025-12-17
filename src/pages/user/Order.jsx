@@ -1,3 +1,4 @@
+import React from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
@@ -122,10 +123,7 @@ export default function Order() {
     return (
       <div className="text-center py-20 text-gray-500 text-lg">
         Template tidak ditemukan 😅 <br />
-        <Link
-          to="/user/shop"
-          className="text-blue-600 underline mt-2 inline-block"
-        >
+        <Link to="/shop" className="text-blue-600 underline mt-2 inline-block">
           Kembali ke Shop
         </Link>
       </div>
@@ -158,7 +156,7 @@ export default function Order() {
     <div className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-blue-100 py-12 px-6">
       <div className="max-w-4xl mx-auto bg-white rounded-3xl shadow-lg p-8 md:p-12 relative">
         <Link
-          to="/user/shop"
+          to="/shop"
           className="absolute top-6 left-6 text-gray-500 hover:text-blue-600 flex items-center gap-1 transition"
         >
           <ArrowLeft size={18} /> Kembali

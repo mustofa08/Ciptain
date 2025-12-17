@@ -1,4 +1,4 @@
-// src/components/ShopCore.jsx
+import React from "react";
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -13,38 +13,18 @@ import {
 import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import { useAuth } from "../contexts/AuthContext";
-import { usePreview } from "../contexts/PreviewContext";
 
-/**
- * ShopCore
- * props:
- *  - mode: "public" | "user"  (default "public")
- *
- * Behavior:
- *  - If PreviewContext.previewMode !== "none", override effectiveMode:
- *      previewMode "public"  -> effectiveMode = "public"
- *      previewMode "user"    -> effectiveMode = "user"
- *      previewMode "mobile"  -> effectiveMode = mode but compact layout
- *      previewMode "desktop" -> effectiveMode = mode (desktop layout)
- */
+export default function Shop() {
+  const { user, profile } = useAuth();
 
-export default function ShopCore({ mode = "public" }) {
-  const { user } = useAuth();
-  const { previewMode } = usePreview();
+  /* ================= PERMISSION ================= */
+  const isLoggedIn = !!user;
+  const isUser = profile?.role === "user";
+  const canFavorite = isUser;
+  const canOrder = isUser;
 
-  // determine effective mode & compact flag
-  const compactPreview = previewMode === "mobile";
-  const effectiveMode =
-    previewMode === "public"
-      ? "public"
-      : previewMode === "user"
-      ? "user"
-      : // if previewMode is mobile/desktop/none -> use incoming prop
-        mode;
-
+  /* ================= STATE ================= */
   const [templates, setTemplates] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [subcategories, setSubcategories] = useState([]);
   const [favorites, setFavorites] = useState([]);
   const [categoryMap, setCategoryMap] = useState({ Semua: [] });
 
@@ -55,25 +35,19 @@ export default function ShopCore({ mode = "public" }) {
   const [selectedSubcategory, setSelectedSubcategory] = useState("Semua");
   const [showScrollTop, setShowScrollTop] = useState(false);
 
-  const [viewMode, setViewMode] = useState("all"); // "all" | "favorites"
+  const [viewMode, setViewMode] = useState("all");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [favPulse, setFavPulse] = useState(false);
   const prevFavCountRef = useRef(0);
 
-  // helper: safe public url getter
+  /* ================= HELPERS ================= */
   const getImageUrl = (path) => {
     if (!path) return "/src/assets/template-placeholder.jpg";
     if (path.startsWith("http")) return path;
-    // supabase.storage.from(...).getPublicUrl returns { data: { publicUrl } }
-    try {
-      const { data } = supabase.storage.from("templates").getPublicUrl(path);
-      return data?.publicUrl || "/src/assets/template-placeholder.jpg";
-    } catch (err) {
-      return "/src/assets/template-placeholder.jpg";
-    }
+    const { data } = supabase.storage.from("templates").getPublicUrl(path);
+    return data?.publicUrl || "/src/assets/template-placeholder.jpg";
   };
 
-  // helper: angka ke kata (satu, dua, ...)
   const numberToWord = (n) => {
     const map = [
       "nol",
@@ -88,205 +62,161 @@ export default function ShopCore({ mode = "public" }) {
       "sembilan",
       "sepuluh",
     ];
-    if (n >= 0 && n <= 10) return map[n];
-    return n.toString();
+    return map[n] || n.toString();
   };
 
-  // 🔹 Fetch templates
+  /* ================= FETCH TEMPLATES ================= */
   useEffect(() => {
     let mounted = true;
-    const fetchTemplates = async () => {
-      setLoading(true);
+    (async () => {
       try {
         const { data, error } = await supabase
           .from("templates")
           .select("*")
           .order("created_at", { ascending: false });
+
         if (error) throw error;
-        // map images to public urls
-        const withUrls = (data || []).map((t) => ({
-          ...t,
-          image: getImageUrl(t.image),
-        }));
-        if (mounted) setTemplates(withUrls);
-      } catch (err) {
-        console.error("Gagal memuat templates:", err?.message || err);
-        if (mounted) setErrorMsg("Gagal memuat data template 😢");
+
+        if (mounted) {
+          setTemplates(
+            (data || []).map((t) => ({
+              ...t,
+              image: getImageUrl(t.image),
+            }))
+          );
+        }
+      } catch {
+        if (mounted) setErrorMsg("Gagal memuat template 😢");
       } finally {
         if (mounted) setLoading(false);
       }
-    };
-    fetchTemplates();
-    return () => {
-      mounted = false;
-    };
+    })();
+    return () => (mounted = false);
   }, []);
 
-  // 🔹 Fetch categories + subcategories
+  /* ================= FETCH CATEGORY ================= */
   useEffect(() => {
-    const fetchCategories = async () => {
+    (async () => {
       try {
-        const { data: catData } = await supabase
+        const { data: cats } = await supabase
           .from("categories")
-          .select("id, name");
-        const { data: subData } = await supabase
+          .select("id,name");
+
+        const { data: subs } = await supabase
           .from("subcategories")
-          .select("id, name, category_id");
-        setCategories(catData || []);
-        setSubcategories(subData || []);
+          .select("name,category_id");
+
         const map = { Semua: [] };
-        (catData || []).forEach((cat) => {
-          const relatedSubs = (subData || [])
-            .filter((s) => s.category_id === cat.id)
-            .map((s) => s.name);
-          map[cat.name] = ["Semua", ...relatedSubs];
+        (cats || []).forEach((c) => {
+          map[c.name] = [
+            "Semua",
+            ...(subs || [])
+              .filter((s) => s.category_id === c.id)
+              .map((s) => s.name),
+          ];
         });
+
         setCategoryMap(map);
-      } catch (err) {
-        console.warn("fetchCategories error", err);
+      } catch {
         setCategoryMap({ Semua: [] });
       }
-    };
-    fetchCategories();
+    })();
   }, []);
 
-  // 🔹 Fetch favorites (only relevant for user mode)
+  /* ================= FAVORITES ================= */
   useEffect(() => {
-    if (effectiveMode !== "user") return;
-    if (!user) {
+    if (!canFavorite) {
       setFavorites([]);
-      prevFavCountRef.current = 0;
       return;
     }
+
     let mounted = true;
-    const fetchFavorites = async () => {
-      try {
-        const { data } = await supabase
-          .from("favorites")
-          .select("*")
-          .eq("user_id", user.id);
-        if (!mounted) return;
+    (async () => {
+      const { data } = await supabase
+        .from("favorites")
+        .select("*")
+        .eq("user_id", user.id);
+
+      if (mounted) {
         setFavorites(data || []);
         prevFavCountRef.current = (data || []).length;
-      } catch (err) {
-        console.warn("fetchFavorites error", err);
       }
-    };
-    fetchFavorites();
-    return () => {
-      mounted = false;
-    };
-  }, [effectiveMode, user]);
+    })();
 
-  // when favorites count increases -> pulse animation on floating button
+    return () => (mounted = false);
+  }, [canFavorite, user]);
+
   useEffect(() => {
-    const prev = prevFavCountRef.current || 0;
-    if (favorites.length > prev) {
+    if (favorites.length > prevFavCountRef.current) {
       setFavPulse(true);
       setTimeout(() => setFavPulse(false), 700);
     }
     prevFavCountRef.current = favorites.length;
-  }, [favorites.length]);
+  }, [favorites]);
 
-  // 🔹 Scroll-to-top button
-  useEffect(() => {
-    const handleScroll = () => setShowScrollTop(window.scrollY > 400);
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  // toggle favorite (optimistic UI)
-  const toggleFavorite = async (template) => {
-    if (effectiveMode !== "user") {
-      alert("Login terlebih dahulu untuk menyimpan favorit 💙");
+  /* ================= FAVORITE ACTION ================= */
+  const toggleFavorite = async (tpl) => {
+    if (!canFavorite) {
+      alert("Fitur favorit hanya untuk user 👤");
       return;
     }
-    if (!user) {
-      alert("Silakan login dulu.");
-      return;
-    }
-    const exists = favorites.some((f) => f.template_id === template.id);
+
+    const exists = favorites.some((f) => f.template_id === tpl.id);
+
     if (exists) {
-      // remove
-      try {
-        await supabase
-          .from("favorites")
-          .delete()
-          .eq("user_id", user.id)
-          .eq("template_id", template.id);
-        setFavorites((prev) =>
-          prev.filter((f) => f.template_id !== template.id)
-        );
-      } catch (err) {
-        console.warn("gagal hapus favorit", err);
-      }
+      await supabase
+        .from("favorites")
+        .delete()
+        .eq("user_id", user.id)
+        .eq("template_id", tpl.id);
+
+      setFavorites((f) => f.filter((x) => x.template_id !== tpl.id));
     } else {
-      const newFav = {
+      const payload = {
         user_id: user.id,
-        template_id: template.id,
-        name: template.name,
-        category: template.category,
-        subcategory: template.subcategory,
-        price: template.price,
-        image: template.image,
+        template_id: tpl.id,
+        name: tpl.name,
+        category: tpl.category,
+        subcategory: tpl.subcategory,
+        price: tpl.price,
+        image: tpl.image,
       };
-      try {
-        await supabase.from("favorites").insert([newFav]);
-        // optimistic update
-        setFavorites((prev) => [...prev, newFav]);
-      } catch (err) {
-        console.warn("gagal tambah favorit", err);
-      }
+
+      await supabase.from("favorites").insert([payload]);
+      setFavorites((f) => [...f, payload]);
     }
   };
 
-  // 🔹 Filter templates
+  /* ================= FILTER ================= */
   const filteredTemplates = templates.filter((t) => {
-    const matchCategory =
-      selectedCategory === "Semua" || t.category === selectedCategory;
-    const matchSubcategory =
+    const c = selectedCategory === "Semua" || t.category === selectedCategory;
+    const s =
       selectedSubcategory === "Semua" || t.subcategory === selectedSubcategory;
-    const matchSearch = t.name
-      ?.toLowerCase()
-      .includes(searchTerm.toLowerCase());
-    return matchCategory && matchSubcategory && matchSearch;
+    const q = t.name?.toLowerCase().includes(searchTerm.toLowerCase());
+    return c && s && q;
   });
 
   const favoriteTemplates = templates.filter((t) =>
     favorites.some((f) => f.template_id === t.id)
   );
 
-  // displayed templates based on tab
   const displayedTemplates =
     viewMode === "favorites" ? favoriteTemplates : filteredTemplates;
 
-  // dynamic header text for favorites drawer
+  /* ================= FAVORITE TEXT ================= */
   const favoritesCount = favorites.length;
-  const favoritesHeaderText = (() => {
-    if (favoritesCount === 0) return "Belum ada template favorit";
-    if (favoritesCount === 1) return `1 template favorit — ${numberToWord(1)}`;
-    if (favoritesCount <= 10)
-      return `${favoritesCount} template favorit — ${numberToWord(
-        favoritesCount
-      )}`;
-    return `${favoritesCount} template favorit`;
-  })();
 
-  const favoritesSubText = (() => {
-    if (favoritesCount === 0)
-      return "Tambahkan template ke favorit untuk melihatnya di sini.";
-    if (favoritesCount === 1) return "Kamu sedang menyukai 1 template.";
-    return `Kamu menyukai ${favoritesCount} template.`;
-  })();
+  const favoritesHeaderText =
+    favoritesCount === 0
+      ? "Belum ada favorit"
+      : `${favoritesCount} template favorit — ${numberToWord(favoritesCount)}`;
 
-  // compact layout class (for mobile preview)
-  const compactCardClass = compactPreview
-    ? "w-[180px]"
-    : "w-[230px] md:w-[250px]";
-  const compactGrid = compactPreview
-    ? "sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
-    : "sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4";
+  const favoritesSubText =
+    favoritesCount === 0
+      ? "Tambahkan template ke favorit."
+      : `Kamu menyukai ${favoritesCount} template.`;
 
+  /* ================= RENDER ================= */
   return (
     <div
       className={`relative min-h-screen bg-gradient-to-b from-blue-50 via-white to-blue-100 py-8 px-4 md:px-8`}
@@ -307,15 +237,10 @@ export default function ShopCore({ mode = "public" }) {
           </span>
         </h1>
         <p className="text-gray-600 mt-4 text-lg max-w-2xl mx-auto">
-          {effectiveMode === "user"
+          {isUser
             ? "Temukan template terbaik dan simpan favoritmu 💙"
             : "Lihat dan pesan template profesional dengan desain elegan 💫"}
         </p>
-        {previewMode !== "none" && (
-          <p className="text-xs text-gray-500 mt-2">
-            (Preview mode: <b>{previewMode}</b>)
-          </p>
-        )}
       </motion.div>
 
       {/* Filter + Tabs */}
@@ -378,7 +303,7 @@ export default function ShopCore({ mode = "public" }) {
           )}
 
         {/* Tabs */}
-        {effectiveMode === "user" && (
+        {isUser && (
           <div className="flex justify-center mt-6 gap-4">
             <button
               onClick={() => setViewMode("all")}
@@ -413,17 +338,16 @@ export default function ShopCore({ mode = "public" }) {
         ) : errorMsg ? (
           <div className="text-center text-red-500 py-20">{errorMsg}</div>
         ) : displayedTemplates.length > 0 ? (
-          <div className={`grid grid-cols-1 ${compactGrid} gap-10`}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-10">
             {displayedTemplates.map((t) => {
               const isFav = favorites.some((f) => f.template_id === t.id);
               return (
                 <TemplateCard
                   key={t.id}
                   template={t}
-                  mode={effectiveMode}
+                  canOrder={canOrder}
                   isFav={isFav}
                   onFavorite={toggleFavorite}
-                  compact={compactPreview}
                 />
               );
             })}
@@ -436,7 +360,7 @@ export default function ShopCore({ mode = "public" }) {
       </div>
 
       {/* Floating Favorites Drawer (only for user mode) */}
-      {effectiveMode === "user" && (
+      {isUser && (
         <>
           <button
             onClick={() => setDrawerOpen(true)}
@@ -542,9 +466,9 @@ export default function ShopCore({ mode = "public" }) {
   );
 }
 
-/* 🔹 Template Card (supports compact) */
-function TemplateCard({ template, mode, isFav, onFavorite, compact = false }) {
-  const containerClass = compact ? "w-[180px]" : "w-[230px] md:w-[250px]";
+/* ================= CARD ================= */
+function TemplateCard({ template, canOrder, isFav, onFavorite }) {
+  const containerClass = "w-[230px] md:w-[250px]";
   const aspect = "aspect-[9/18]";
 
   return (
@@ -587,12 +511,11 @@ function TemplateCard({ template, mode, isFav, onFavorite, compact = false }) {
           </Link>
           <button
             onClick={() => {
-              if (mode === "user") {
-                window.location.href = `/user/order/${template.id}`;
-              } else {
-                // for public preview open order route but show login later
-                window.location.href = `/user/order/${template.id}`;
+              if (!canOrder) {
+                alert("Login sebagai user untuk melakukan order 👤");
+                return;
               }
+              window.location.href = `/user/order/${template.id}`;
             }}
             className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-full text-sm transition"
           >

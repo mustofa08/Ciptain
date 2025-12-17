@@ -1,7 +1,8 @@
-// ✅ src/components/LandingContent.jsx
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext"; // 👈 tambahkan ini
+import { useAuth } from "../contexts/AuthContext";
+
 import {
   ShoppingBag,
   Palette,
@@ -17,17 +18,18 @@ import {
   ArrowUp,
   ArrowDown,
 } from "lucide-react";
+
 import { Instagram } from "lucide-react";
 import { SiTiktok } from "react-icons/si";
 import { FaWhatsapp } from "react-icons/fa";
-import logoIcon from "../assets/logo-icon.svg";
-import { useState, useEffect } from "react";
 
+import logoIcon from "../assets/logo-icon.svg";
 import sample1 from "../assets/sample1.jpg";
 import sample2 from "../assets/sample2.jpg";
 import sample3 from "../assets/sample3.jpg";
 import sample4 from "../assets/sample4.jpg";
 
+/* ================= FLOATING IMAGES ================= */
 const floatingImages = [
   {
     src: sample1,
@@ -59,25 +61,27 @@ const floatingImages = [
   },
 ];
 
-export default function LandingContent({ mode = "public" }) {
+export default function Home() {
+  const { user, profile } = useAuth();
   const [showScrollTop, setShowScrollTop] = useState(false);
-  const { profile, user } = useAuth(); // 👈 ambil data user dari context
 
   useEffect(() => {
-    const handleScroll = () => setShowScrollTop(window.scrollY > 400);
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    const onScroll = () => setShowScrollTop(window.scrollY > 400);
+    window.addEventListener("scroll", onScroll);
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   const userName =
     profile?.username ||
     profile?.display_name ||
     user?.email?.split("@")[0] ||
-    "Pengguna"; // fallback
+    "Pengunjung";
+
+  const dashboardPath = profile?.role === "admin" ? "/admin" : "/dashboard";
 
   return (
     <div className="flex flex-col items-center bg-gradient-to-b from-blue-50 via-white to-blue-100 min-h-screen overflow-hidden">
-      {/* HERO */}
+      {/* ================= HERO ================= */}
       <section className="flex flex-col md:flex-row justify-between items-center w-full max-w-7xl px-10 py-24 relative">
         <motion.div
           className="md:w-1/2 text-center md:text-left flex flex-col items-center md:items-start z-10"
@@ -90,22 +94,28 @@ export default function LandingContent({ mode = "public" }) {
             alt="Ciptain Logo"
             className="w-20 mb-6 drop-shadow-[0_0_25px_rgba(59,130,246,0.5)] animate-pulse"
           />
+
           <h1 className="text-4xl font-extrabold text-gray-800 mb-4">
-            {mode === "user"
+            {user
               ? `👋 Selamat Datang, ${userName}!`
               : "Ciptain — Platform Kreatif Digital"}
           </h1>
+
           <p className="text-gray-600 text-lg mb-10 max-w-md leading-relaxed">
             Wujudkan undangan pernikahan dan portofolio digital impianmu dengan
             desain elegan, interaktif, dan mudah dibagikan.
           </p>
+
           <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
             <Link
-              to={mode === "user" ? "/user/shop" : "/shop"}
-              className="bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white px-8 py-3 rounded-full text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2"
+              to="/shop"
+              className="bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white px-8 py-3 rounded-full text-lg font-semibold shadow-lg hover:shadow-xl transition flex items-center gap-2"
             >
-              Mulai Ciptakan Karyamu 🚀
+              <ShoppingBag size={20} />
+              Jelajahi Template
             </Link>
+
+            {/* Social */}
             <div className="flex items-center gap-5 text-gray-600">
               <a
                 href="https://www.instagram.com/ciptain_studio/"
@@ -135,7 +145,7 @@ export default function LandingContent({ mode = "public" }) {
           </div>
         </motion.div>
 
-        {/* Floating images */}
+        {/* Floating Images */}
         <div className="md:w-1/2 mt-14 md:mt-0 relative flex justify-center items-center">
           <motion.div
             className="absolute inset-0 blur-[150px] opacity-60 bg-gradient-to-br from-blue-400/50 via-cyan-300/40 to-transparent rounded-full"
@@ -167,7 +177,7 @@ export default function LandingContent({ mode = "public" }) {
         </div>
       </section>
 
-      {/* 💎 KEUNGGULAN */}
+      {/* ================= KEUNGGULAN ================= */}
       <section className="relative w-full bg-gradient-to-br from-blue-700 via-blue-600 to-cyan-500 text-white py-24 px-6 text-center">
         <motion.h2
           className="text-4xl font-extrabold mb-12 drop-shadow-lg"
@@ -218,7 +228,7 @@ export default function LandingContent({ mode = "public" }) {
         </div>
       </section>
 
-      {/* ⚙️ FITUR UNGGULAN */}
+      {/* ================= FITUR ================= */}
       <section className="w-full max-w-6xl px-6 py-24 text-center">
         <motion.h2
           className="text-4xl font-bold text-gray-800 mb-12"
@@ -265,7 +275,7 @@ export default function LandingContent({ mode = "public" }) {
         </div>
       </section>
 
-      {/* ✨ CARA ORDER */}
+      {/* ================= CARA ORDER ================= */}
       <section className="w-full max-w-6xl px-6 py-24 text-center bg-gradient-to-b from-white to-blue-50 rounded-t-[4rem] shadow-inner mx-auto">
         <motion.h2
           className="text-4xl font-bold text-gray-800 mb-16"
@@ -371,5 +381,20 @@ export default function LandingContent({ mode = "public" }) {
         </motion.button>
       )}
     </div>
+  );
+}
+
+/* ================= SMALL COMPONENT ================= */
+function SectionTitle({ title, highlight }) {
+  return (
+    <section className="w-full py-24 text-center">
+      <motion.h2
+        className="text-4xl font-extrabold text-gray-800"
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+      >
+        {title} <span className="text-blue-600">{highlight}</span>
+      </motion.h2>
+    </section>
   );
 }

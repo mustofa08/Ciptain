@@ -1,3 +1,4 @@
+import React from "react";
 import { useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../contexts/AuthContext";
