@@ -1,5 +1,4 @@
-import React from "react";
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Eye,
@@ -216,38 +215,39 @@ export default function Shop() {
       ? "Tambahkan template ke favorit."
       : `Kamu menyukai ${favoritesCount} template.`;
 
+  /* ================= SCROLL ================= */
+  useEffect(() => {
+    const onScroll = () => setShowScrollTop(window.scrollY > 400);
+    window.addEventListener("scroll", onScroll);
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   /* ================= RENDER ================= */
   return (
-    <div
-      className={`relative min-h-screen bg-gradient-to-b from-blue-50 via-white to-blue-100 py-8 px-4 md:px-8`}
-    >
-      {/* Glow */}
-      <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-blue-300/20 blur-[150px] rounded-full pointer-events-none" />
-
-      {/* Header */}
+    <div className="relative min-h-screen bg-gradient-to-b from-blue-50 via-white to-blue-100 px-4 sm:px-6 md:px-8 py-8 overflow-x-hidden">
+      {/* ================= HEADER ================= */}
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         className="max-w-7xl mx-auto mb-10 text-center"
       >
-        <h1 className="text-4xl md:text-5xl font-extrabold text-gray-800 tracking-tight">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-gray-800 tracking-tight">
           ✨ Jelajahi Template{" "}
           <span className="bg-gradient-to-r from-blue-600 to-cyan-400 bg-clip-text text-transparent">
             Ciptain
           </span>
         </h1>
-        <p className="text-gray-600 mt-4 text-lg max-w-2xl mx-auto">
+        <p className="text-gray-600 mt-4 text-sm sm:text-base md:text-lg max-w-2xl mx-auto">
           {isUser
             ? "Temukan template terbaik dan simpan favoritmu 💙"
             : "Lihat dan pesan template profesional dengan desain elegan 💫"}
         </p>
       </motion.div>
 
-      {/* Filter + Tabs */}
-      <div className="max-w-7xl mx-auto mb-10 bg-white/70 backdrop-blur-xl border border-white/40 py-4 px-6 rounded-2xl shadow-lg">
+      {/* ================= FILTER + TABS ================= */}
+      <div className="max-w-7xl mx-auto mb-10 bg-white/70 backdrop-blur-xl border border-white/40 py-4 px-4 sm:px-6 rounded-2xl shadow-lg">
         <div className="flex flex-col md:flex-row items-center gap-4">
-          {/* Search */}
-          <div className="relative flex-1 max-w-md w-full">
+          <div className="relative flex-1 w-full max-w-md">
             <Search
               size={18}
               className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
@@ -261,8 +261,7 @@ export default function Shop() {
             />
           </div>
 
-          {/* Categories */}
-          <div className="flex gap-2 items-center overflow-x-auto scrollbar-hide">
+          <div className="flex gap-2 items-center overflow-x-auto scrollbar-hide w-full md:w-auto">
             {Object.keys(categoryMap).map((cat) => (
               <button
                 key={cat}
@@ -270,7 +269,7 @@ export default function Shop() {
                   setSelectedCategory(cat);
                   setSelectedSubcategory("Semua");
                 }}
-                className={`px-5 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+                className={`px-4 sm:px-5 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
                   selectedCategory === cat
                     ? "bg-gradient-to-r from-blue-600 to-cyan-400 text-white shadow-md"
                     : "bg-white border border-gray-200 text-gray-700 hover:bg-blue-50"
@@ -282,7 +281,6 @@ export default function Shop() {
           </div>
         </div>
 
-        {/* Subcategories */}
         {selectedCategory !== "Semua" &&
           categoryMap[selectedCategory]?.length > 0 && (
             <div className="mt-3 flex gap-2 justify-center flex-wrap">
@@ -302,9 +300,8 @@ export default function Shop() {
             </div>
           )}
 
-        {/* Tabs */}
         {isUser && (
-          <div className="flex justify-center mt-6 gap-4">
+          <div className="flex justify-center mt-6 gap-4 flex-wrap">
             <button
               onClick={() => setViewMode("all")}
               className={`px-5 py-1.5 rounded-full text-sm font-medium transition-all ${
@@ -329,7 +326,7 @@ export default function Shop() {
         )}
       </div>
 
-      {/* Template Grid */}
+      {/* ================= TEMPLATE GRID ================= */}
       <div className="max-w-7xl mx-auto">
         {loading ? (
           <div className="text-center py-20 text-gray-500">
@@ -338,7 +335,7 @@ export default function Shop() {
         ) : errorMsg ? (
           <div className="text-center text-red-500 py-20">{errorMsg}</div>
         ) : displayedTemplates.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-10">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
             {displayedTemplates.map((t) => {
               const isFav = favorites.some((f) => f.template_id === t.id);
               return (
@@ -359,24 +356,19 @@ export default function Shop() {
         )}
       </div>
 
-      {/* Floating Favorites Drawer (only for user mode) */}
+      {/* ================= FAVORITE FLOAT BUTTON ================= */}
       {isUser && (
         <>
           <button
             onClick={() => setDrawerOpen(true)}
-            className={`fixed bottom-8 right-8 bg-gradient-to-r from-blue-600 to-cyan-400 text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all z-50 flex items-center justify-center ${
+            className={`fixed bottom-24 sm:bottom-8 right-4 sm:right-8 bg-gradient-to-r from-blue-600 to-cyan-400 text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all z-50 ${
               favPulse ? "animate-pulse" : ""
             }`}
-            aria-label="Favorit Saya"
-            title={`${favoritesCount} favorit`}
           >
             <div className="relative">
               <Heart size={22} />
               {favoritesCount > 0 && (
-                <span
-                  className="absolute -top-2 -right-2 bg-white text-blue-700 text-xs font-semibold rounded-full px-2 py-0.5 shadow"
-                  style={{ minWidth: 20, textAlign: "center" }}
-                >
+                <span className="absolute -top-2 -right-2 bg-white text-blue-700 text-xs font-semibold rounded-full px-2 py-0.5 shadow">
                   {favoritesCount}
                 </span>
               )}
@@ -390,7 +382,7 @@ export default function Shop() {
                 animate={{ x: 0 }}
                 exit={{ x: "100%" }}
                 transition={{ duration: 0.3 }}
-                className="fixed top-0 right-0 w-80 h-full bg-white shadow-2xl border-l border-gray-100 z-[9999] p-5 overflow-y-auto"
+                className="fixed top-0 right-0 w-full sm:w-80 h-full bg-white shadow-2xl border-l border-gray-100 z-[9999] p-5 overflow-y-auto"
               >
                 <div className="flex justify-between items-center mb-4">
                   <div>
@@ -428,9 +420,7 @@ export default function Shop() {
                         <p className="text-xs text-gray-500">{t.price}</p>
                       </div>
                       <button
-                        onClick={() => {
-                          toggleFavorite(t);
-                        }}
+                        onClick={() => toggleFavorite(t)}
                         className="text-sm text-red-500 hover:underline"
                       >
                         Hapus
@@ -448,7 +438,7 @@ export default function Shop() {
         </>
       )}
 
-      {/* Scroll to Top */}
+      {/* ================= SCROLL TO TOP ================= */}
       <AnimatePresence>
         {showScrollTop && (
           <motion.button
@@ -456,7 +446,7 @@ export default function Shop() {
             animate={{ opacity: 1 }}
             whileHover={{ scale: 1.05 }}
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-            className="fixed bottom-24 right-8 bg-blue-600 text-white p-3 rounded-full shadow-lg hover:shadow-xl hover:bg-blue-700 transition-all z-[9999]"
+            className="fixed bottom-36 sm:bottom-24 right-4 sm:right-8 bg-blue-600 text-white p-3 rounded-full shadow-lg hover:bg-blue-700 transition-all z-[9999]"
           >
             <ArrowUp size={18} />
           </motion.button>
@@ -468,29 +458,24 @@ export default function Shop() {
 
 /* ================= CARD ================= */
 function TemplateCard({ template, canOrder, isFav, onFavorite }) {
-  const containerClass = "w-[230px] md:w-[250px]";
-  const aspect = "aspect-[9/18]";
-
   return (
     <motion.div
       whileHover={{ scale: 1.03 }}
       className="relative flex flex-col items-center group transition-all duration-300"
     >
-      <div
-        className={`relative bg-white rounded-[2rem] shadow-lg overflow-hidden border border-gray-100 hover:shadow-2xl transition-all ${aspect} ${containerClass}`}
-      >
+      <div className="relative bg-white rounded-[2rem] shadow-lg overflow-hidden border border-gray-100 hover:shadow-2xl transition-all aspect-[9/18] w-full max-w-[200px] sm:max-w-[220px] md:max-w-[240px]">
         <img
           src={template.image}
           alt={template.name}
           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
         />
+
         <motion.div
           whileTap={{ scale: 1.1 }}
           onClick={() => onFavorite(template)}
           className={`absolute z-10 top-3 right-3 p-2 rounded-full shadow-md cursor-pointer backdrop-blur-sm transition-all ${
             isFav ? "bg-red-100/90" : "bg-white/70 hover:bg-white/90"
           }`}
-          title={isFav ? "Hapus favorit" : "Tambah favorit"}
         >
           <Heart
             size={18}
@@ -524,14 +509,16 @@ function TemplateCard({ template, canOrder, isFav, onFavorite }) {
         </div>
       </div>
 
-      <div className="text-center mt-4">
-        <h3 className="text-base font-semibold text-gray-800">
+      <div className="text-center mt-4 px-2">
+        <h3 className="text-sm sm:text-base font-semibold text-gray-800 line-clamp-1">
           {template.name}
         </h3>
-        <p className="text-sm text-gray-500">
+        <p className="text-xs sm:text-sm text-gray-500">
           {template.category} • {template.subcategory || "-"}
         </p>
-        <p className="text-blue-600 font-semibold mt-1">{template.price}</p>
+        <p className="text-blue-600 font-semibold mt-1 text-sm">
+          {template.price}
+        </p>
       </div>
     </motion.div>
   );

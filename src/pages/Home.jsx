@@ -35,28 +35,28 @@ const floatingImages = [
     src: sample1,
     style: { top: "0%", left: "10%" },
     delay: 1,
-    size: "w-32 md:w-40",
+    size: "w-28 sm:w-32 md:w-40",
     duration: 6,
   },
   {
     src: sample2,
     style: { top: "0%", right: "10%" },
     delay: 2,
-    size: "w-32 md:w-40",
+    size: "w-28 sm:w-32 md:w-40",
     duration: 7,
   },
   {
     src: sample3,
     style: { bottom: "0%", left: "0%" },
     delay: 3,
-    size: "w-28 md:w-36",
+    size: "w-24 sm:w-28 md:w-36",
     duration: 5,
   },
   {
     src: sample4,
     style: { bottom: "0%", right: "0%" },
     delay: 4,
-    size: "w-28 md:w-36",
+    size: "w-24 sm:w-28 md:w-36",
     duration: 6,
   },
 ];
@@ -77,12 +77,10 @@ export default function Home() {
     user?.email?.split("@")[0] ||
     "Pengunjung";
 
-  const dashboardPath = profile?.role === "admin" ? "/admin" : "/dashboard";
-
   return (
-    <div className="flex flex-col items-center bg-gradient-to-b from-blue-50 via-white to-blue-100 min-h-screen overflow-hidden">
+    <div className="flex flex-col items-center bg-gradient-to-b from-blue-50 via-white to-blue-100 min-h-screen overflow-x-hidden">
       {/* ================= HERO ================= */}
-      <section className="flex flex-col md:flex-row justify-between items-center w-full max-w-7xl px-10 py-24 relative">
+      <section className="flex flex-col md:flex-row justify-between items-center w-full max-w-7xl px-4 sm:px-6 md:px-10 py-16 sm:py-20 md:py-24 relative">
         <motion.div
           className="md:w-1/2 text-center md:text-left flex flex-col items-center md:items-start z-10"
           initial={{ opacity: 0, y: 40 }}
@@ -92,30 +90,29 @@ export default function Home() {
           <img
             src={logoIcon}
             alt="Ciptain Logo"
-            className="w-20 mb-6 drop-shadow-[0_0_25px_rgba(59,130,246,0.5)] animate-pulse"
+            className="w-16 sm:w-20 mb-6 drop-shadow-[0_0_25px_rgba(59,130,246,0.5)] animate-pulse"
           />
 
-          <h1 className="text-4xl font-extrabold text-gray-800 mb-4">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-gray-800 mb-4">
             {user
               ? `👋 Selamat Datang, ${userName}!`
               : "Ciptain — Platform Kreatif Digital"}
           </h1>
 
-          <p className="text-gray-600 text-lg mb-10 max-w-md leading-relaxed">
+          <p className="text-gray-600 text-base sm:text-lg mb-8 sm:mb-10 max-w-md leading-relaxed">
             Wujudkan undangan pernikahan dan portofolio digital impianmu dengan
             desain elegan, interaktif, dan mudah dibagikan.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
+          <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-6 w-full sm:w-auto">
             <Link
               to="/shop"
-              className="bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white px-8 py-3 rounded-full text-lg font-semibold shadow-lg hover:shadow-xl transition flex items-center gap-2"
+              className="w-full sm:w-auto justify-center bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white px-6 sm:px-8 py-3 rounded-full text-base sm:text-lg font-semibold shadow-lg hover:shadow-xl transition flex items-center gap-2"
             >
               <ShoppingBag size={20} />
               Jelajahi Template
             </Link>
 
-            {/* Social */}
             <div className="flex items-center gap-5 text-gray-600">
               <a
                 href="https://www.instagram.com/ciptain_studio/"
@@ -123,7 +120,7 @@ export default function Home() {
                 rel="noreferrer"
                 className="hover:text-pink-500 transition"
               >
-                <Instagram size={26} />
+                <Instagram size={24} />
               </a>
               <a
                 href="https://www.tiktok.com/@ciptain_studio"
@@ -131,7 +128,7 @@ export default function Home() {
                 rel="noreferrer"
                 className="hover:text-black transition"
               >
-                <SiTiktok size={24} />
+                <SiTiktok size={22} />
               </a>
               <a
                 href="https://wa.me/6281515434168"
@@ -139,26 +136,28 @@ export default function Home() {
                 rel="noreferrer"
                 className="hover:text-green-500 transition"
               >
-                <FaWhatsapp size={26} />
+                <FaWhatsapp size={24} />
               </a>
             </div>
           </div>
         </motion.div>
 
         {/* Floating Images */}
-        <div className="md:w-1/2 mt-14 md:mt-0 relative flex justify-center items-center">
+        <div className="md:w-1/2 mt-12 md:mt-0 relative flex justify-center items-center">
           <motion.div
-            className="absolute inset-0 blur-[150px] opacity-60 bg-gradient-to-br from-blue-400/50 via-cyan-300/40 to-transparent rounded-full"
+            className="absolute inset-0 blur-[120px] opacity-60 bg-gradient-to-br from-blue-400/50 via-cyan-300/40 to-transparent rounded-full"
             animate={{ opacity: [0.3, 0.7, 0.4], scale: [0.9, 1.05, 0.9] }}
             transition={{ duration: 6, repeat: Infinity }}
           />
-          <div className="relative w-full max-w-md h-[420px]">
+          <div className="relative w-full max-w-sm sm:max-w-md h-[360px] sm:h-[420px]">
             {floatingImages.map((img, i) => (
               <motion.img
                 key={i}
                 src={img.src}
                 alt=""
-                className={`absolute rounded-2xl shadow-2xl ${img.size}`}
+                className={`absolute rounded-2xl shadow-2xl ${img.size} ${
+                  i > 1 ? "hidden sm:block" : ""
+                }`}
                 animate={{
                   y: [0, -20, 0, 15, 0],
                   x: [0, 10, 0, -10, 0],
@@ -178,9 +177,9 @@ export default function Home() {
       </section>
 
       {/* ================= KEUNGGULAN ================= */}
-      <section className="relative w-full bg-gradient-to-br from-blue-700 via-blue-600 to-cyan-500 text-white py-24 px-6 text-center">
+      <section className="relative w-full bg-gradient-to-br from-blue-700 via-blue-600 to-cyan-500 text-white py-16 sm:py-20 md:py-24 px-4 sm:px-6 text-center">
         <motion.h2
-          className="text-4xl font-extrabold mb-12 drop-shadow-lg"
+          className="text-2xl sm:text-3xl md:text-4xl font-extrabold mb-10 sm:mb-12 drop-shadow-lg"
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7 }}
@@ -188,7 +187,7 @@ export default function Home() {
           💎 Kenapa Harus <span className="text-yellow-300">Ciptain?</span>
         </motion.h2>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 lg:gap-10 max-w-6xl mx-auto">
           {[
             {
               icon: <ShieldCheck size={42} />,
@@ -213,7 +212,7 @@ export default function Home() {
           ].map((feature, i) => (
             <motion.div
               key={i}
-              className="bg-white/10 rounded-3xl p-8 backdrop-blur-md shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
+              className="bg-white/10 rounded-3xl p-6 sm:p-8 backdrop-blur-md shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: i * 0.1 }}
@@ -229,16 +228,16 @@ export default function Home() {
       </section>
 
       {/* ================= FITUR ================= */}
-      <section className="w-full max-w-6xl px-6 py-24 text-center">
+      <section className="w-full max-w-6xl px-4 sm:px-6 py-16 sm:py-20 md:py-24 text-center">
         <motion.h2
-          className="text-4xl font-bold text-gray-800 mb-12"
+          className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-10 sm:mb-12"
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
         >
           ⚙️ Fitur Unggulan <span className="text-blue-600">Ciptain</span>
         </motion.h2>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-10">
           {[
             {
               icon: <CloudUpload size={38} />,
@@ -258,7 +257,7 @@ export default function Home() {
           ].map((fitur, i) => (
             <motion.div
               key={i}
-              className="bg-white rounded-3xl p-8 shadow-lg border border-gray-100 hover:shadow-2xl hover:-translate-y-2 transition-all duration-300"
+              className="bg-white rounded-3xl p-6 sm:p-8 shadow-lg border border-gray-100 hover:shadow-2xl hover:-translate-y-2 transition-all duration-300"
               initial={{ opacity: 0, y: 40 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: i * 0.1 }}
@@ -276,9 +275,9 @@ export default function Home() {
       </section>
 
       {/* ================= CARA ORDER ================= */}
-      <section className="w-full max-w-6xl px-6 py-24 text-center bg-gradient-to-b from-white to-blue-50 rounded-t-[4rem] shadow-inner mx-auto">
+      <section className="w-full max-w-6xl px-4 sm:px-6 py-16 sm:py-20 md:py-24 text-center bg-gradient-to-b from-white to-blue-50 rounded-t-[4rem] shadow-inner mx-auto">
         <motion.h2
-          className="text-4xl font-bold text-gray-800 mb-16"
+          className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-12 sm:mb-16"
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
@@ -320,14 +319,12 @@ export default function Home() {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: i * 0.15 }}
             >
-              {/* Icon bulat gradient */}
               <div
                 className={`w-20 h-20 rounded-full bg-gradient-to-br ${step.color} flex items-center justify-center text-white shadow-lg mb-5`}
               >
                 {step.icon}
               </div>
 
-              {/* Text */}
               <div className="bg-white rounded-3xl p-6 shadow-md border border-gray-100 hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
                 <h3 className="text-lg font-semibold text-gray-800 mb-2">
                   {step.title}
@@ -337,7 +334,6 @@ export default function Home() {
                 </p>
               </div>
 
-              {/* Panah antar step (hanya selain terakhir) */}
               {i < arr.length - 1 && (
                 <div className="hidden lg:block absolute top-10 right-[-50px]">
                   <svg
@@ -362,7 +358,6 @@ export default function Home() {
           ))}
         </div>
 
-        {/* Garis penghubung di bawah (mobile view) */}
         <div className="lg:hidden mt-10 flex flex-col items-center gap-2 text-blue-400">
           <ArrowDown size={24} />
           <div className="w-1 h-12 bg-gradient-to-b from-blue-400 to-blue-600 rounded-full" />
@@ -375,26 +370,11 @@ export default function Home() {
       {showScrollTop && (
         <motion.button
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          className="fixed bottom-20 right-8 bg-blue-600 text-white p-3 rounded-full shadow-lg hover:bg-blue-700 transition z-50"
+          className="fixed bottom-24 sm:bottom-8 right-4 sm:right-8 bg-blue-600 text-white p-3 rounded-full shadow-lg hover:bg-blue-700 transition z-50"
         >
           <ArrowUp size={18} />
         </motion.button>
       )}
     </div>
-  );
-}
-
-/* ================= SMALL COMPONENT ================= */
-function SectionTitle({ title, highlight }) {
-  return (
-    <section className="w-full py-24 text-center">
-      <motion.h2
-        className="text-4xl font-extrabold text-gray-800"
-        initial={{ opacity: 0, y: 30 }}
-        whileInView={{ opacity: 1, y: 0 }}
-      >
-        {title} <span className="text-blue-600">{highlight}</span>
-      </motion.h2>
-    </section>
   );
 }
