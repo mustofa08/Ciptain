@@ -24,42 +24,13 @@ import { SiTiktok } from "react-icons/si";
 import { FaWhatsapp } from "react-icons/fa";
 
 import logoIcon from "../assets/logo-icon.svg";
-import sample1 from "../assets/sample1.jpg";
-import sample2 from "../assets/sample2.jpg";
-import sample3 from "../assets/sample3.jpg";
-import sample4 from "../assets/sample4.jpg";
+import sample1 from "../assets/sample1.png";
+import sample2 from "../assets/sample2.png";
+import sample3 from "../assets/sample1.png";
+import sample4 from "../assets/sample2.png";
 
-/* ================= FLOATING IMAGES ================= */
-const floatingImages = [
-  {
-    src: sample1,
-    style: { top: "0%", left: "10%" },
-    delay: 1,
-    size: "w-28 sm:w-32 md:w-40",
-    duration: 6,
-  },
-  {
-    src: sample2,
-    style: { top: "0%", right: "10%" },
-    delay: 2,
-    size: "w-28 sm:w-32 md:w-40",
-    duration: 7,
-  },
-  {
-    src: sample3,
-    style: { bottom: "0%", left: "0%" },
-    delay: 3,
-    size: "w-24 sm:w-28 md:w-36",
-    duration: 5,
-  },
-  {
-    src: sample4,
-    style: { bottom: "0%", right: "0%" },
-    delay: 4,
-    size: "w-24 sm:w-28 md:w-36",
-    duration: 6,
-  },
-];
+/* ================= Marquee IMAGES ================= */
+const marqueeImages = [sample1, sample2, sample3, sample4];
 
 export default function Home() {
   const { user, profile } = useAuth();
@@ -142,37 +113,39 @@ export default function Home() {
           </div>
         </motion.div>
 
-        {/* Floating Images */}
-        <div className="md:w-1/2 mt-12 md:mt-0 relative flex justify-center items-center">
+        {/* ================= MARQUEE IMAGES ================= */}
+        <div className="relative w-full md:w-1/2 mt-12 md:mt-0 overflow-hidden">
+          {/* fade kiri */}
+          <div className="absolute left-0 top-0 h-full w-12 bg-gradient-to-r from-blue-50 to-transparent z-10" />
+          {/* fade kanan */}
+          <div className="absolute right-0 top-0 h-full w-12 bg-gradient-to-l from-blue-50 to-transparent z-10" />
+
           <motion.div
-            className="absolute inset-0 blur-[120px] opacity-60 bg-gradient-to-br from-blue-400/50 via-cyan-300/40 to-transparent rounded-full"
-            animate={{ opacity: [0.3, 0.7, 0.4], scale: [0.9, 1.05, 0.9] }}
-            transition={{ duration: 6, repeat: Infinity }}
-          />
-          <div className="relative w-full max-w-sm sm:max-w-md h-[360px] sm:h-[420px]">
-            {floatingImages.map((img, i) => (
-              <motion.img
+            className="flex gap-6 w-max"
+            animate={{ x: ["0%", "-50%"] }}
+            transition={{
+              duration: 20,
+              ease: "linear",
+              repeat: Infinity,
+            }}
+          >
+            {[...marqueeImages, ...marqueeImages].map((img, i) => (
+              <div
                 key={i}
-                src={img.src}
-                alt=""
-                className={`absolute rounded-2xl shadow-2xl ${img.size} ${
-                  i > 1 ? "hidden sm:block" : ""
-                }`}
-                animate={{
-                  y: [0, -20, 0, 15, 0],
-                  x: [0, 10, 0, -10, 0],
-                  rotate: [0, 1.5, -1.5, 0],
-                }}
-                transition={{
-                  duration: img.duration + 2,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: img.delay,
-                }}
-                style={img.style}
-              />
+                className="
+          flex-shrink-0
+          w-40 sm:w-48 md:w-56
+          h-56 sm:h-64 md:h-72
+          bg-white
+          rounded-3xl
+          shadow-xl
+          overflow-hidden
+        "
+              >
+                <img src={img} alt="" className="w-full h-full object-cover" />
+              </div>
             ))}
-          </div>
+          </motion.div>
         </div>
       </section>
 
