@@ -248,17 +248,17 @@ export default function Home() {
       </section>
 
       {/* ================= CARA ORDER ================= */}
-      <section className="w-full max-w-6xl px-4 sm:px-6 py-16 sm:py-20 md:py-24 text-center bg-gradient-to-b from-white to-blue-50 rounded-t-[4rem] shadow-inner mx-auto">
+      <section className="w-full max-w-6xl px-4 sm:px-6 py-16 sm:py-20 md:py-24 text-center bg-gradient-to-b from-blue-700 via-blue-600 to-cyan-500 rounded-t-[4rem] shadow-inner mx-auto">
         <motion.h2
-          className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-12 sm:mb-16"
+          className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-12 sm:mb-16"
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          ✨ Cara Order di <span className="text-blue-600">Ciptain</span>
+          ✨ Cara Order di <span className="text-yellow-300">Ciptain</span>
         </motion.h2>
 
-        <div className="relative flex flex-col lg:flex-row justify-between items-center gap-10">
+        <div className="relative flex flex-col lg:flex-row items-center justify-center gap-10">
           {[
             {
               icon: <ShoppingBag size={40} />,
@@ -285,58 +285,86 @@ export default function Home() {
               color: "from-green-400 to-green-600",
             },
           ].map((step, i, arr) => (
-            <motion.div
-              key={i}
-              className="relative flex flex-col items-center lg:w-1/4"
-              initial={{ opacity: 0, y: 50 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: i * 0.15 }}
-            >
-              <div
-                className={`w-20 h-20 rounded-full bg-gradient-to-br ${step.color} flex items-center justify-center text-white shadow-lg mb-5`}
+            <React.Fragment key={i}>
+              {/* STEP CARD */}
+              <motion.div
+                className="relative flex flex-col items-center w-full sm:max-w-md lg:max-w-xs"
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: i * 0.15 }}
               >
-                {step.icon}
-              </div>
+                {/*DESKTOP ARROW */}
+                <div className="relative flex flex-col items-center w-full sm:max-w-md lg:max-w-xs">
+                  <div className="mb-5 flex items-center justify-center">
+                    <div
+                      className={`w-20 h-20 rounded-full bg-gradient-to-br ${step.color} flex items-center justify-center text-white shadow-lg`}
+                    >
+                      {step.icon}
+                    </div>
+                  </div>
 
-              <div className="bg-white rounded-3xl p-6 shadow-md border border-gray-100 hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
-                <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                  {step.title}
-                </h3>
-                <p className="text-gray-600 text-sm leading-relaxed">
-                  {step.desc}
-                </p>
-              </div>
+                  {/* DESKTOP ARROW → */}
+                  {i < arr.length - 1 && (
+                    <div
+                      className="
+                      hidden lg:flex
+                      absolute
+                      right-[-56px]
+                      top-1/2
+                      -translate-y-1/2
+                      text-yellow-500
+                    "
+                    >
+                      <svg
+                        width="40"
+                        height="20"
+                        viewBox="0 0 40 20"
+                        fill="none"
+                      >
+                        <path
+                          d="M0 10H32M32 10L24 2M32 10L24 18"
+                          stroke="currentColor"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </div>
+                  )}
+                </div>
 
+                {/* TEXT CARD */}
+                <div
+                  className="bg-white rounded-3xl p-6 shadow-md border border-gray-100 
+                text-center w-full min-h-[170px] 
+                flex flex-col justify-center"
+                >
+                  <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                    {step.title}
+                  </h3>
+                  <p className="text-gray-600 text-sm leading-relaxed">
+                    {step.desc}
+                  </p>
+                </div>
+              </motion.div>
+
+              {/* MOBILE ARROW ↓ */}
               {i < arr.length - 1 && (
-                <div className="hidden lg:block absolute top-10 right-[-50px]">
-                  <svg
-                    width="100"
-                    height="50"
-                    viewBox="0 0 100 50"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="text-blue-400 opacity-60"
+                <div className="lg:hidden my-6 flex flex-col items-center text-yellow-500">
+                  <motion.div
+                    animate={{ y: [0, 10, 0] }}
+                    transition={{
+                      duration: 1.4,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                    }}
                   >
-                    <path
-                      d="M0 25H90M90 25L80 15M90 25L80 35"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
+                    <ArrowDown size={60} />
+                  </motion.div>
                 </div>
               )}
-            </motion.div>
+            </React.Fragment>
           ))}
-        </div>
-
-        <div className="lg:hidden mt-10 flex flex-col items-center gap-2 text-blue-400">
-          <ArrowDown size={24} />
-          <div className="w-1 h-12 bg-gradient-to-b from-blue-400 to-blue-600 rounded-full" />
-          <ArrowDown size={24} />
-          <div className="w-1 h-12 bg-gradient-to-b from-blue-400 to-blue-600 rounded-full" />
-          <ArrowDown size={24} />
         </div>
       </section>
 

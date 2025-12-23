@@ -109,8 +109,12 @@ export default function AdminOrders() {
   // =====================================================
   // 🔹 Filter data
   // =====================================================
-  const filteredOrders =
-    filter === "Semua" ? orders : orders.filter((o) => o.status === filter);
+
+  const filteredOrders = React.useMemo(() => {
+    return filter === "Semua"
+      ? orders
+      : orders.filter((o) => o.status === filter);
+  }, [orders, filter]);
 
   // =====================================================
   // 📊 Statistik ringkas (berdasarkan status)
@@ -127,13 +131,13 @@ export default function AdminOrders() {
   // 🧱 UI
   // =====================================================
   return (
-    <div className="p-8 relative">
+    <div className="relative px-4 sm:px-6 lg:px-8 py-6">
       {/* 🔔 Suara notifikasi */}
-      <audio
+      {/* <audio
         ref={soundRef}
         src="https://cdn.pixabay.com/audio/2022/03/15/audio_6f1b17f38d.mp3"
         preload="auto"
-      />
+      /> */}
 
       {/* 🔥 Popup notifikasi visual */}
       <AnimatePresence>
@@ -158,7 +162,7 @@ export default function AdminOrders() {
       </AnimatePresence>
 
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold text-blue-600">📦 Kelola Order</h1>
           <p className="text-gray-600 mt-1">
@@ -170,7 +174,14 @@ export default function AdminOrders() {
           whileHover={{ scale: 1.05 }}
           onClick={fetchOrders}
           disabled={loading}
-          className="flex items-center gap-2 mt-4 md:mt-0 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-md"
+          className="
+            flex items-center gap-2
+            px-4 py-2
+            bg-blue-600 hover:bg-blue-700
+            text-white rounded-lg shadow-md
+            text-sm sm:text-base
+            self-start sm:self-auto
+          "
         >
           <RefreshCw className={loading ? "animate-spin" : ""} size={18} />
           {loading ? "Memuat..." : "Refresh"}
@@ -192,7 +203,7 @@ export default function AdminOrders() {
       </motion.div>
 
       {/* Statistik ringkasan */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-5 mb-10">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-10">
         <SummaryCard
           label="Total Order"
           value={summary.total}
@@ -226,7 +237,7 @@ export default function AdminOrders() {
       </div>
 
       {/* Filter status */}
-      <div className="mb-4 flex flex-wrap gap-2 items-center">
+      <div className="mb-4 flex gap-2 overflow-x-auto pb-2">
         {[
           "Semua",
           "Menunggu Pembayaran",
@@ -237,19 +248,23 @@ export default function AdminOrders() {
           <button
             key={status}
             onClick={() => setFilter(status)}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-              filter === status
-                ? "bg-blue-600 text-white shadow"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            }`}
+            className={`px-4 py-2 rounded-full
+  text-xs sm:text-sm
+  whitespace-nowrap font-medium transition-all ${
+    filter === status
+      ? "bg-blue-600 text-white shadow"
+      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+  }`}
           >
             {status}
           </button>
         ))}
       </div>
 
-      {/* Tabel Order */}
-      <div className="overflow-x-auto bg-white rounded-2xl shadow-md border border-gray-100">
+      {/* ================= LIST ORDER ================= */}
+
+      {/* DESKTOP TABLE */}
+      <div className="hidden md:block overflow-x-auto bg-white rounded-2xl shadow-md border border-gray-100">
         <table className="min-w-full text-sm">
           <thead className="bg-gray-50 border-b">
             <tr className="text-gray-700">
@@ -297,6 +312,45 @@ export default function AdminOrders() {
           </tbody>
         </table>
       </div>
+
+      {/* MOBILE CARD LIST */}
+
+      <div className="md:hidden space-y-4">
+        {filteredOrders.length === 0 && (
+          <p className="text-center text-gray-500 italic py-8">
+            Tidak ada data untuk ditampilkan 😅
+          </p>
+        )}
+
+        {filteredOrders.map((o) => (
+          <div key={o.id} className="bg-white rounded-xl border shadow-sm p-4">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="font-semibold">{o.customer_name}</p>
+                <p className="text-sm text-gray-500">{o.template_name}</p>
+              </div>
+              <StatusBadge status={o.status} />
+            </div>
+
+            <div className="mt-3 text-sm space-y-1">
+              <p>
+                <b>Harga:</b> {o.price}
+              </p>
+              <p>
+                <b>Metode:</b> {o.payment_method}
+              </p>
+            </div>
+
+            <div className="mt-4">
+              <ActionButtons
+                id={o.id}
+                status={o.status}
+                handleStatusChange={handleStatusChange}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -339,7 +393,7 @@ function ActionButtons({ id, status, handleStatusChange }) {
   ];
 
   return (
-    <div className="flex justify-center gap-2 flex-wrap">
+    <div className="flex justify-center gap-3 flex-wrap">
       {buttons
         .filter((b) => b.status !== status)
         .map((b, i) => {
@@ -348,10 +402,10 @@ function ActionButtons({ id, status, handleStatusChange }) {
             <button
               key={i}
               onClick={() => confirmAndChange(b.status)}
-              className={`${b.color} hover:opacity-80`}
+              className={`${b.color} hover:opacity-80 transition`}
               title={`Ubah ke ${b.status}`}
             >
-              <Icon size={18} />
+              <Icon className="w-5 h-5 sm:w-[18px] sm:h-[18px]" />
             </button>
           );
         })}

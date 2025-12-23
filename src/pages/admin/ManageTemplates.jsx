@@ -185,17 +185,24 @@ export default function ManageTemplates() {
   return (
     <div className="p-8">
       {/* HEADER */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        {/* TITLE */}
         <div>
-          <h1 className="text-3xl font-bold text-blue-600">
+          <h1 className="text-2xl sm:text-3xl font-bold text-blue-600">
             🎨 Kelola Template
           </h1>
-          <p className="text-gray-600 mt-1">
+          <p className="text-gray-600 mt-1 text-sm sm:text-base">
             Tambah, ubah, dan hapus template dengan mudah.
           </p>
         </div>
 
-        <div className="flex gap-3">
+        {/* ACTION BUTTONS */}
+        <div
+          className="
+      grid grid-cols-2 gap-3
+      sm:flex sm:gap-3
+    "
+        >
           <motion.button
             whileHover={{ scale: 1.05 }}
             onClick={() => {
@@ -203,7 +210,15 @@ export default function ManageTemplates() {
               setShowForm(false);
               setEditing(null);
             }}
-            className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg shadow-md"
+            className="
+        w-full
+        bg-gray-200 hover:bg-gray-300
+        text-gray-700
+        px-4 py-2
+        rounded-lg shadow-md
+        text-sm sm:text-base
+        whitespace-nowrap
+      "
           >
             🗂️ Kelola Kategori
           </motion.button>
@@ -217,9 +232,19 @@ export default function ManageTemplates() {
               resetForm();
               setShowForm(true);
             }}
-            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-blue-700"
+            className="
+              w-full
+              flex items-center justify-center gap-2
+              bg-blue-600 text-white
+              px-4 py-2
+              rounded-lg shadow-md
+              hover:bg-blue-700
+              text-sm sm:text-base
+              whitespace-nowrap
+            "
           >
-            <Plus size={18} /> Tambah Template
+            <Plus size={18} />
+            Tambah Template
           </motion.button>
         </div>
       </div>

@@ -140,7 +140,7 @@ export default function ManageUsers() {
       {/* HEADER */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-blue-600 tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-bold text-blue-600">
             👥 Kelola Pengguna
           </h1>
           <p className="text-gray-600 mt-1">
@@ -152,7 +152,10 @@ export default function ManageUsers() {
           whileHover={{ scale: 1.05 }}
           onClick={fetchUsers}
           disabled={loading}
-          className="flex items-center gap-2 mt-4 md:mt-0 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-md transition"
+          className="w-full sm:w-auto mt-4 md:mt-0 px-4 py-2 
+             bg-blue-600 hover:bg-blue-700 text-white 
+             rounded-lg shadow-md transition 
+             flex items-center justify-center gap-2"
         >
           <RefreshCw
             size={18}
@@ -163,7 +166,7 @@ export default function ManageUsers() {
       </div>
 
       {/* SEARCH BAR */}
-      <div className="relative mb-8 max-w-md">
+      <div className="relative mb-8 w-full sm:max-w-md">
         <Search
           size={18}
           className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
@@ -177,8 +180,8 @@ export default function ManageUsers() {
         />
       </div>
 
-      {/* TABLE */}
-      <div className="overflow-x-auto bg-white/80 backdrop-blur-md rounded-2xl shadow-lg border border-gray-100">
+      {/* TABLE (Tablet & Desktop) */}
+      <div className="hidden sm:block overflow-x-auto bg-white/80 backdrop-blur-md rounded-2xl shadow-lg border border-gray-100">
         {loading ? (
           <div className="flex justify-center py-16 text-gray-500">
             <Loader2 className="animate-spin mr-2" /> Memuat data pengguna...
@@ -203,6 +206,7 @@ export default function ManageUsers() {
                 <th className="py-3 px-4 text-center font-semibold">Aksi</th>
               </tr>
             </thead>
+
             <tbody>
               {filteredUsers.map((u) => (
                 <motion.tr
@@ -211,11 +215,11 @@ export default function ManageUsers() {
                   animate={{ opacity: 1, y: 0 }}
                   className="border-b hover:bg-blue-50/40 transition"
                 >
-                  <td className="py-3 px-4 font-medium text-gray-800">
+                  <td className="py-3 px-4 font-medium">
                     {u.username || "Tanpa Nama"}
                   </td>
                   <td className="py-3 px-4">{u.email}</td>
-                  <td className="py-3 px-4 flex items-center gap-2 text-gray-700">
+                  <td className="py-3 px-4 flex items-center gap-2">
                     <Phone size={14} className="text-gray-400" />
                     {u.phone || "-"}
                   </td>
@@ -231,32 +235,15 @@ export default function ManageUsers() {
                     </span>
                   </td>
                   <td className="py-3 px-4 text-gray-500">
-                    {u.created_at
-                      ? new Date(u.created_at).toLocaleDateString("id-ID", {
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric",
-                        })
-                      : "-"}
+                    {new Date(u.created_at).toLocaleDateString("id-ID")}
                   </td>
                   <td className="py-3 px-4 text-center">
                     <div className="flex justify-center gap-4">
-                      <button
-                        onClick={() => handleRoleChange(u.id, u.role)}
-                        className="text-blue-600 hover:text-blue-800 transition"
-                        title={`Ubah jadi ${
-                          u.role === "admin" ? "user" : "admin"
-                        }`}
-                      >
-                        <UserCog size={18} />
+                      <button onClick={() => handleRoleChange(u.id, u.role)}>
+                        <UserCog size={18} className="text-blue-600" />
                       </button>
-
-                      <button
-                        onClick={() => handleDelete(u.id, u.email)}
-                        className="text-red-600 hover:text-red-800 transition"
-                        title="Hapus pengguna"
-                      >
-                        <Trash2 size={18} />
+                      <button onClick={() => handleDelete(u.id, u.email)}>
+                        <Trash2 size={18} className="text-red-600" />
                       </button>
                     </div>
                   </td>
@@ -265,6 +252,53 @@ export default function ManageUsers() {
             </tbody>
           </table>
         )}
+      </div>
+
+      {/* MOBILE CARD LIST */}
+      <div className="sm:hidden space-y-4">
+        {filteredUsers.map((u) => (
+          <motion.div
+            key={u.id}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white rounded-xl shadow border p-4"
+          >
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="font-semibold">{u.username || "Tanpa Nama"}</p>
+                <p className="text-xs text-gray-500">{u.email}</p>
+              </div>
+              <span
+                className={`px-2 py-1 rounded-full text-xs ${
+                  u.role === "admin"
+                    ? "bg-purple-100 text-purple-700"
+                    : "bg-blue-100 text-blue-700"
+                }`}
+              >
+                {u.role}
+              </span>
+            </div>
+
+            <div className="mt-3 text-sm space-y-1">
+              <p className="flex items-center gap-2">
+                <Phone size={14} className="text-gray-400" />
+                {u.phone || "-"}
+              </p>
+              <p className="text-xs text-gray-500">
+                Daftar: {new Date(u.created_at).toLocaleDateString("id-ID")}
+              </p>
+            </div>
+
+            <div className="flex justify-end gap-4 mt-4">
+              <button onClick={() => handleRoleChange(u.id, u.role)}>
+                <UserCog size={18} className="text-blue-600" />
+              </button>
+              <button onClick={() => handleDelete(u.id, u.email)}>
+                <Trash2 size={18} className="text-red-600" />
+              </button>
+            </div>
+          </motion.div>
+        ))}
       </div>
     </div>
   );

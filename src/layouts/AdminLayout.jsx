@@ -19,10 +19,10 @@ export default function AdminLayout() {
   const location = useLocation();
 
   const menuItems = [
-    { name: "Home", path: "/", icon: Home }, // 👈 BARU
+    { name: "Home", path: "/", icon: Home },
     { name: "Dashboard", path: "/admin", icon: LayoutDashboard },
-    { name: "Templates", path: "/admin/templates", icon: FileText },
     { name: "Orders", path: "/admin/orders", icon: ClipboardList },
+    { name: "Templates", path: "/admin/templates", icon: FileText },
     { name: "Users", path: "/admin/users", icon: Users },
     { name: "Settings", path: "/admin/settings", icon: Settings },
   ];
@@ -34,9 +34,8 @@ export default function AdminLayout() {
 
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
-      {/* ================= SIDEBAR ================= */}
-      <aside className="w-64 md:w-72 bg-white border-r shadow-md flex flex-col">
-        {/* ---------- TOP ---------- */}
+      {/* ================= SIDEBAR (DESKTOP) ================= */}
+      <aside className="hidden md:flex w-64 lg:w-72 bg-white border-r shadow-md flex-col">
         <div className="flex-1">
           {/* Brand */}
           <div className="p-6 border-b border-gray-200">
@@ -50,21 +49,17 @@ export default function AdminLayout() {
             </p>
           </div>
 
-          {/* Navigation */}
+          {/* Menu */}
           <nav className="mt-4 px-3 space-y-1">
             {menuItems.map((item) => {
               const isActive = location.pathname === item.path;
               const Icon = item.icon;
 
               return (
-                <motion.div
-                  key={item.name}
-                  whileHover={{ scale: 1.03 }}
-                  transition={{ type: "spring", stiffness: 260 }}
-                >
+                <motion.div key={item.name} whileHover={{ scale: 1.03 }}>
                   <Link
                     to={item.path}
-                    className={`flex items-center gap-3 p-2.5 rounded-lg text-sm font-medium transition-all ${
+                    className={`flex items-center gap-3 p-2.5 rounded-lg text-sm font-medium transition ${
                       isActive
                         ? "bg-blue-100 text-blue-700 shadow-sm"
                         : "text-gray-700 hover:bg-blue-50 hover:text-blue-600"
@@ -79,12 +74,12 @@ export default function AdminLayout() {
           </nav>
         </div>
 
-        {/* ---------- STICKY BOTTOM ---------- */}
-        <div className="p-4 border-t border-gray-200">
+        {/* Logout */}
+        <div className="p-4 border-t">
           <motion.button
             whileHover={{ scale: 1.04 }}
             onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg py-2.5 font-semibold transition-all"
+            className="w-full flex items-center justify-center gap-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg py-2.5 font-semibold"
           >
             <LogOut size={18} />
             Keluar
@@ -93,7 +88,7 @@ export default function AdminLayout() {
       </aside>
 
       {/* ================= MAIN CONTENT ================= */}
-      <main className="flex-1 p-6 md:p-8 overflow-y-auto">
+      <main className="flex-1 p-4 md:p-8 pb-24 md:pb-8 overflow-y-auto">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -103,6 +98,31 @@ export default function AdminLayout() {
           <Outlet />
         </motion.div>
       </main>
+
+      {/* ================= BOTTOM NAVBAR (MOBILE) ================= */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t shadow-lg">
+        <div className="flex justify-around items-center h-16">
+          {menuItems.map((item) => {
+            const isActive = location.pathname === item.path;
+            const Icon = item.icon;
+
+            return (
+              <Link
+                key={item.name}
+                to={item.path}
+                className={`flex flex-col items-center justify-center gap-1 text-xs transition ${
+                  isActive
+                    ? "text-blue-600"
+                    : "text-gray-500 hover:text-blue-500"
+                }`}
+              >
+                <Icon size={22} />
+                <span className="text-[11px]">{item.name}</span>
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
     </div>
   );
 }

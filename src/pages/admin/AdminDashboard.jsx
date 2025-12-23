@@ -82,7 +82,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Statistik Section */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-12">
+      <section className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-12">
         <StatCard
           icon={Users}
           title="Total Pengguna"
